@@ -1,3 +1,5 @@
+# kcse2016
+
 # KCSE leakage Portal Exam Access Platform
 
 Production-focused MVP for selling and controlling access to exam papers and study PDFs with:
@@ -87,5 +89,3 @@ Seed script creates admin and subscriber from env values:
 - Move file storage to S3-compatible private bucket + signed stream access
 - Add audit alerts and SIEM integration
 - Add automated tests (unit + integration + e2e)
-
-# kcse2016

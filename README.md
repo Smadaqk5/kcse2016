@@ -87,3 +87,5 @@ Seed script creates admin and subscriber from env values:
 - Move file storage to S3-compatible private bucket + signed stream access
 - Add audit alerts and SIEM integration
 - Add automated tests (unit + integration + e2e)
+
+# kcse2016

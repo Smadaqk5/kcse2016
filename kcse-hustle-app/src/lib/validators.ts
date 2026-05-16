@@ -3,7 +3,7 @@ import {
   KENYA_PHONE_MESSAGE,
   KENYA_PHONE_REGEX,
   normalizePhone,
-} from "@/lib/phone";
+} from "./phone";
 
 const phoneField = z
   .string()

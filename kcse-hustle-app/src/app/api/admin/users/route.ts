@@ -4,13 +4,6 @@ import { requireSession } from "@/lib/api-auth";
 import { createUserSchema } from "@/lib/validators";
 import { hashPassword } from "@/lib/auth";
 
-function normalizePhone(phone: string) {
-  const value = phone.trim().replace(/\s+/g, "");
-  if (value.startsWith("+254")) return value.slice(1);
-  if (value.startsWith("0")) return `254${value.slice(1)}`;
-  return value;
-}
-
 export async function GET(req: NextRequest) {
   const session = requireSession(req);
   if (!session || session.role !== "ADMIN") {
@@ -32,12 +25,18 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   const parsed = createUserSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return NextResponse.json(
+      { error: issue?.message ?? "Invalid payload" },
+      { status: 400 },
+    );
+  }
 
   const user = await prisma.user.create({
     data: {
       username: parsed.data.username,
-      phone: normalizePhone(parsed.data.phone),
+      phone: parsed.data.phone,
       passwordHash: await hashPassword(parsed.data.password),
       createdByAdmin: session.userId,
     },

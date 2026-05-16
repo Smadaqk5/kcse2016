@@ -14,10 +14,25 @@ export function RegisterForm() {
   async function submit() {
     setLoading(true);
     setError("");
+    const payload = {
+      username: username.trim(),
+      phone: phone.trim(),
+      password,
+    };
+    if (payload.username.length < 3) {
+      setError("Username must be at least 3 characters.");
+      setLoading(false);
+      return;
+    }
+    if (payload.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      setLoading(false);
+      return;
+    }
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, phone, password }),
+      body: JSON.stringify(payload),
     });
     setLoading(false);
     if (!res.ok) {
@@ -38,7 +53,7 @@ export function RegisterForm() {
       />
       <input
         className="w-full rounded-md border px-3 py-2"
-        placeholder="Phone (07..., 01..., 2547..., 2541..., +2547..., +2541...)"
+        placeholder="Phone (e.g. 0712 345 678 or +254712345678)"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
       />

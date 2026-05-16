@@ -1,23 +1,32 @@
 import { z } from "zod";
+import {
+  KENYA_PHONE_MESSAGE,
+  KENYA_PHONE_REGEX,
+  normalizePhone,
+} from "@/lib/phone";
 
-const kenyaPhoneRegex = /^(\+254|254)[17]\d{8}$|^0[17]\d{8}$/;
+const phoneField = z
+  .string()
+  .min(1, "Phone is required")
+  .transform(normalizePhone)
+  .refine((v) => KENYA_PHONE_REGEX.test(v), { message: KENYA_PHONE_MESSAGE });
 
 export const loginSchema = z.object({
-  username: z.string().min(3),
-  password: z.string().min(6),
+  username: z.string().trim().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export const createUserSchema = z.object({
-  username: z.string().min(3),
-  password: z.string().min(6),
-  phone: z.string().regex(kenyaPhoneRegex, "Use 07/01/2547/2541/+2547/+2541 format"),
+  username: z.string().trim().min(3, "Username must be at least 3 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  phone: phoneField,
 });
 
 export const selfRegisterSchema = createUserSchema;
 
 export const stkSchema = z.object({
   amount: z.number().positive(),
-  phone: z.string().regex(kenyaPhoneRegex, "Use 07/01/2547/2541/+2547/+2541 format"),
+  phone: phoneField,
   type: z.enum(["SUBSCRIPTION", "PAPER"]),
   subscriptionType: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional(),
   packageId: z.string().cuid().optional(),

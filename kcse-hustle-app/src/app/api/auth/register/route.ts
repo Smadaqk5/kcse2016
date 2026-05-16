@@ -5,11 +5,12 @@ import { selfRegisterSchema } from "@/lib/validators";
 import { rateLimit } from "@/lib/rate-limit";
 import { Prisma } from "@prisma/client";
 
-function normalizePhone(phone: string) {
-  const value = phone.trim().replace(/\s+/g, "");
-  if (value.startsWith("+254")) return value.slice(1);
-  if (value.startsWith("0")) return `254${value.slice(1)}`;
-  return value;
+function validationError(parsed: { success: false; error: { issues: { message: string; path: PropertyKey[] }[] } }) {
+  const issue = parsed.error.issues[0];
+  return NextResponse.json(
+    { error: issue?.message ?? "Invalid payload" },
+    { status: 400 },
+  );
 }
 
 export async function POST(request: Request) {
@@ -21,14 +22,14 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = selfRegisterSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    return validationError(parsed);
   }
 
   try {
     const user = await prisma.user.create({
       data: {
         username: parsed.data.username,
-        phone: normalizePhone(parsed.data.phone),
+        phone: parsed.data.phone,
         passwordHash: await hashPassword(parsed.data.password),
         role: "SUBSCRIBER",
         isActive: true,

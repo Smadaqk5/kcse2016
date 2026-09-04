@@ -1,0 +1,6 @@
+{
+  "name": "KCSE Hustle App",
+  "description": "Secure exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

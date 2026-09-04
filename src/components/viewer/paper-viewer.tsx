@@ -12,9 +12,11 @@ export function PaperViewer({
   phone: string;
 }) {
   const [hidden, setHidden] = useState(false);
+  const displayUsername = username || "KCSE Candidate";
+  const displayPhone = phone || "Guest";
   const watermark = useMemo(
-    () => `${username} | ${phone} | ${new Date().toLocaleString()}`,
-    [phone, username],
+    () => `${displayUsername} | ${displayPhone} | ${new Date().toLocaleDateString()}`,
+    [displayPhone, displayUsername],
   );
 
   useEffect(() => {
@@ -50,18 +52,21 @@ export function PaperViewer({
     };
   }, []);
 
+  const streamSrc = `/api/papers/${paperId}/stream?phone=${encodeURIComponent(phone || "")}#toolbar=0&navpanes=0`;
+
   return (
     <div className="space-y-3">
-      <p className="rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
-        Screenshots, copying and redistribution prohibited.
-      </p>
-      <div className="relative">
-        <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center opacity-20 text-xl font-bold rotate-[-15deg]">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-900">
+        <span>Protected KCSE Material. Watermarked for: <strong>{displayPhone}</strong></span>
+        <span className="text-amber-700">Screenshots & redistribution prohibited</span>
+      </div>
+      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
+        <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center opacity-15 text-lg sm:text-2xl font-bold rotate-[-15deg] select-none text-white pointer-events-none">
           {watermark}
         </div>
         <iframe
-          src={`/api/papers/${paperId}/stream#toolbar=0&navpanes=0`}
-          className={`h-[75vh] w-full rounded-lg border ${hidden ? "blur-sm" : ""}`}
+          src={streamSrc}
+          className={`h-[78vh] w-full border-0 bg-white ${hidden ? "blur-md" : ""}`}
         />
       </div>
     </div>

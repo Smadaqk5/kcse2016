@@ -35,9 +35,9 @@ async function main() {
   });
 
   const defaultPackages = [
-    { name: "Daily Access", subscriptionType: "DAILY", amount: 49, durationDays: 1, sortOrder: 1 },
-    { name: "Weekly Access", subscriptionType: "WEEKLY", amount: 199, durationDays: 7, sortOrder: 2 },
-    { name: "Monthly Access", subscriptionType: "MONTHLY", amount: 599, durationDays: 30, sortOrder: 3 },
+    { name: "Daily Access Pass", subscriptionType: "DAILY", amount: 1500, durationDays: 1, sortOrder: 1 },
+    { name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 5000, durationDays: 7, sortOrder: 2 },
+    { name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 12000, durationDays: 30, sortOrder: 3 },
   ];
 
   for (const pkg of defaultPackages) {

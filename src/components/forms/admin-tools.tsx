@@ -31,7 +31,24 @@ export function AdminTools() {
   }
 
   useEffect(() => {
-    void loadPackages();
+    let isMounted = true;
+    fetch("/api/admin/subscription-packages")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: Array<PackageItem & { amount: string | number }>) => {
+        if (isMounted && Array.isArray(data)) {
+          setPackages(
+            data.map((p) => ({
+              ...p,
+              amount: Number(p.amount),
+            })),
+          );
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   async function createUser(formData: FormData) {

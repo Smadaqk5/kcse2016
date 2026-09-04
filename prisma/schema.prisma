@@ -44,6 +44,8 @@ model User {
   passwordHash    String
   role            Role            @default(SUBSCRIBER)
   isActive        Boolean         @default(true)
+  twoFactorSecret String?
+  twoFactorEnabled Boolean        @default(false)
   createdByAdmin  String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -58,6 +60,8 @@ model AdminUser {
   username      String   @unique
   passwordHash  String
   fullName      String
+  twoFactorSecret String?
+  twoFactorEnabled Boolean @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }

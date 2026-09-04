@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KCSE leakage Portal - Exam Access Platform",
+  title: "KCSE Hustle App - Exam Access Platform",
   description: "Secure view-only subscription access to exam papers and study PDFs.",
 };
 

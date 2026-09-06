@@ -9,3 +9,9 @@ export function requireSession(req: NextRequest) {
   const session = token ? verifySession(token) : null;
   return session;
 }
+
+export function requireAdminSession(req: NextRequest) {
+  const token = req.cookies.get("kcse_admin_session")?.value || "";
+  const session = token ? verifySession(token) : null;
+  return session && session.role === "ADMIN" ? session : null;
+}

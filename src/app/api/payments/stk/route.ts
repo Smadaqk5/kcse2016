@@ -110,17 +110,38 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const stk = await initiateNestlinkStkPush({
-    amount: paymentAmount,
-    phone: parsed.data.phone,
-    accountReference: `KCSE-${(candidateUsername || parsed.data.phone).slice(-8).toUpperCase()}`,
-    description: parsed.data.type === "SUBSCRIPTION" ? `KCSE ${subscriptionType}` : "KCSE Paper",
-    metadata: {
-      paymentId: payment.id,
-      userId,
-      paperId: parsed.data.paperId,
-    },
-  });
+  let stk;
+  try {
+    stk = await initiateNestlinkStkPush({
+      amount: paymentAmount,
+      phone: parsed.data.phone,
+      accountReference: `KCSE-${(candidateUsername || parsed.data.phone).slice(-8).toUpperCase()}`,
+      description: parsed.data.type === "SUBSCRIPTION" ? `KCSE ${subscriptionType}` : "KCSE Paper",
+      metadata: {
+        paymentId: payment.id,
+        userId,
+        paperId: parsed.data.paperId,
+      },
+    });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Live payment dispatch failed.";
+    await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: "FAILED",
+        metadata: {
+          ...((payment.metadata as Record<string, unknown>) || {}),
+          error: errorMsg,
+          failedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    return NextResponse.json(
+      { error: errorMsg },
+      { status: 502 }
+    );
+  }
 
   await prisma.payment.update({
     where: { id: payment.id },

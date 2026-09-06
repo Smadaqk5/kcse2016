@@ -155,11 +155,29 @@ export function StkForm({
     }
   }
 
-  // Simulate PIN approval in preview/test environment
+  // Simulate PIN approval in preview or verify live gateway in production
   async function handleSimulateApproval() {
     if (!activePaymentId) return;
     setSimulatingPin(true);
+    setError("");
     try {
+      if (!isSimulated) {
+        // Live production mode: query gateway status directly
+        const res = await fetch(`/api/payments/nestlink/status/${activePaymentId}`);
+        const data = await res.json();
+        setSimulatingPin(false);
+        if (data.status === "SUCCESS") {
+          setIsWaitingPrompt(false);
+          setSuccess(`Payment confirmed! Receipt: ${data.receipt || "M-Pesa Verified"}. Your subscription is now ACTIVE.`);
+          setTimeout(() => {
+            router.refresh();
+          }, 1200);
+        } else {
+          setError("Payment not yet confirmed by M-Pesa. Please ensure you entered your PIN on your phone and try again.");
+        }
+        return;
+      }
+
       const res = await fetch("/api/payments/nestlink/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,7 +196,7 @@ export function StkForm({
       }
     } catch {
       setSimulatingPin(false);
-      setError("Failed to simulate confirmation.");
+      setError("Failed to verify confirmation.");
     }
   }
 
@@ -326,7 +344,7 @@ export function StkForm({
             <p>3. Wait 3 seconds — your access activates automatically.</p>
           </div>
 
-          {/* Sandbox preview simulator button */}
+          {/* Live verify or Demo simulator button */}
           <div className="pt-2 border-t border-slate-200">
             <button
               type="button"
@@ -337,17 +355,19 @@ export function StkForm({
               {simulatingPin ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Simulating M-Pesa Confirmation...
+                  {isSimulated ? "Simulating M-Pesa Confirmation..." : "Checking M-Pesa Network..."}
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  [Preview Demo] Simulate PIN Approval
+                  {isSimulated ? "[Preview Demo] Simulate PIN Approval" : "I Have Entered PIN — Verify Now"}
                 </>
               )}
             </button>
             <p className="text-[10px] text-slate-400 mt-1">
-              Test instant subscription activation without real M-Pesa deductions.
+              {isSimulated
+                ? "Test instant subscription activation without real M-Pesa deductions."
+                : "Click to instantly check transaction confirmation status with Nestlink / Safaricom."}
             </p>
           </div>
         </div>

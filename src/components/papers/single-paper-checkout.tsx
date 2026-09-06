@@ -347,20 +347,49 @@ export function SinglePaperCheckout({ paper, hasAccess = false }: SinglePaperChe
                     )}
                   </button>
 
-                  {/* Simulation Helper */}
-                  {(isSimulated || loading || paymentId) && (
+                  {/* Status Verification / Simulation Helper */}
+                  {paymentId && (
                     <div className="pt-2 border-t border-slate-100 flex flex-col items-center gap-2">
-                      <p className="text-[11px] text-slate-500 text-center">
-                        Development sandbox / Instant Test Mode:
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleSimulateConfirm}
-                        disabled={!paymentId}
-                        className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition"
-                      >
-                        ⚡ Simulate Instant M-Pesa Approval
-                      </button>
+                      {isSimulated ? (
+                        <>
+                          <p className="text-[11px] text-slate-500 text-center">
+                            Development sandbox / Instant Test Mode:
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleSimulateConfirm}
+                            disabled={!paymentId}
+                            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-100/70 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition"
+                          >
+                            ⚡ Simulate Instant M-Pesa Approval
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (paymentId) {
+                              setStatusText("Checking live M-Pesa confirmation...");
+                              fetch(`/api/payments/nestlink/status/${paymentId}`)
+                                .then((res) => res.json())
+                                .then((data) => {
+                                  if (data.status === "SUCCESS") {
+                                    setPaymentComplete(true);
+                                    setReceiptNumber(data.receipt || "M-PESA-VERIFIED");
+                                    setStatusText("Payment confirmed! Access unlocked.");
+                                  } else {
+                                    setStatusText("Payment still pending. Please enter your PIN on your phone.");
+                                  }
+                                })
+                                .catch(() => setErrorMessage("Unable to verify payment status."));
+                            }
+                          }}
+                          className="text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>I Have Entered PIN — Check Status</span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </form>

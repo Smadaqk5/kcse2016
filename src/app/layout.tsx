@@ -15,8 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KCSE Hustle App - Exam Access Platform",
-  description: "Secure view-only subscription access to exam papers and study PDFs.",
+  title: "KCSE Hustle App",
+  description: "Secure exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
+  openGraph: {
+    title: "KCSE Hustle App",
+    description: "Secure exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
+  },
 };
 
 export default function RootLayout({

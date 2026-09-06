@@ -210,11 +210,11 @@ ALTER TABLE "public"."ActivityLog" ENABLE ROW LEVEL SECURITY;
 
 -- 6. Default Public Read Policies for Public Content
 DO $$ BEGIN
-    CREATE POLICY "Allow public read of active packages" ON "public"."SubscriptionPackage" FOR SELECT USING (isActive = true);
+    CREATE POLICY "Allow public read of active packages" ON "public"."SubscriptionPackage" FOR SELECT USING ("isActive" = true);
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-    CREATE POLICY "Allow public read of published papers" ON "public"."Paper" FOR SELECT USING (isPublished = true);
+    CREATE POLICY "Allow public read of published papers" ON "public"."Paper" FOR SELECT USING ("isPublished" = true);
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- Allow backend service role / postgres connection full access

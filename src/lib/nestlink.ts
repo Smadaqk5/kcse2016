@@ -6,6 +6,7 @@ export type NestlinkStkPayload = {
   phone: string;
   accountReference?: string;
   description?: string;
+  callbackUrl?: string;
   metadata?: Record<string, unknown>;
 };
 
@@ -16,6 +17,136 @@ export type NestlinkStkResponse = {
   message: string;
   isSimulated?: boolean;
 };
+
+export type NestlinkStatusQueryResponse = {
+  status: "PENDING" | "SUCCESS" | "FAILED" | "NOT_FOUND";
+  receipt?: string;
+  message?: string;
+};
+
+export type NestlinkBalanceResponse = {
+  account_number: string;
+  balance: number;
+  currency: string;
+  status: string;
+  isSimulated?: boolean;
+};
+
+/**
+ * Retrieves configured Nestlink / NestPay M-Pesa credentials
+ */
+export function getNestlinkConfig() {
+  const clientId = (
+    process.env.NESTLINK_CLIENT_ID ||
+    process.env.NESTJS_CLIENT_ID ||
+    process.env.CLIENT_ID ||
+    process.env.NESTLINK_API_KEY ||
+    ""
+  ).trim();
+
+  const clientSecret = (
+    process.env.NESTLINK_CLIENT_SECRET ||
+    process.env.NESTJS_CLIENT_SECRET ||
+    process.env.CLIENT_SECRET ||
+    process.env.NESTLINK_SECRET_KEY ||
+    ""
+  ).trim();
+
+  const accountNumber = (
+    process.env.NESTLINK_ACCOUNT_NUMBER ||
+    process.env.NESTLINK_SHORTCODE ||
+    "25045"
+  ).trim();
+
+  const baseUrl = (
+    process.env.NESTLINK_BASE_URL ||
+    "https://automate.nestlink.co.ke/api"
+  ).replace(/\/$/, "");
+
+  const webhookSecret = (
+    process.env.NESTLINK_WEBHOOK_SECRET ||
+    clientSecret ||
+    ""
+  ).trim();
+
+  const hasLiveCredentials = Boolean(clientId && clientSecret);
+  const simulateEnv = process.env.NESTLINK_SIMULATE_SUCCESS;
+  // If explicitly set to true or false, respect it; otherwise simulate when credentials are missing
+  const isSimulationEnabled = simulateEnv === "true" || !hasLiveCredentials;
+
+  return {
+    clientId,
+    clientSecret,
+    accountNumber,
+    baseUrl,
+    webhookSecret,
+    hasLiveCredentials,
+    isSimulationEnabled,
+  };
+}
+
+/**
+ * Generates NestLink compliant HMAC-SHA256 headers:
+ * Canonical String Format:
+ * ${METHOD}\n${PATH}\n${TIMESTAMP}\n${NONCE}\n${IDEMPOTENCY_KEY}\n${BODY_HASH}
+ */
+export function createNestlinkSignature({
+  method,
+  path,
+  body,
+  clientId,
+  clientSecret,
+}: {
+  method: "GET" | "POST";
+  path: string; // e.g., 'v1/stkpush/initiate' or 'v1/balance/25045'
+  body?: unknown;
+  clientId: string;
+  clientSecret: string;
+}): {
+  headers: Record<string, string>;
+  canonicalString: string;
+  rawBodyString: string;
+} {
+  const cleanPath = path.replace(/^\/+/, "");
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const nonce = crypto.randomUUID();
+  const idempotencyKey = method === "POST" ? crypto.randomUUID() : "";
+
+  let rawBodyString = "";
+  let bodyHash = "";
+
+  if (method === "POST" && body !== undefined && body !== null) {
+    rawBodyString = typeof body === "string" ? body : JSON.stringify(body);
+    bodyHash = crypto.createHash("sha256").update(rawBodyString).digest("hex");
+  }
+
+  // Exact Canonical String Format:
+  // ${METHOD}\n${PATH}\n${TIMESTAMP}\n${NONCE}\n${IDEMPOTENCY_KEY}\n${BODY_HASH}
+  const canonicalString = `${method}\n${cleanPath}\n${timestamp}\n${nonce}\n${idempotencyKey}\n${bodyHash}`;
+
+  const signature = crypto
+    .createHmac("sha256", clientSecret)
+    .update(canonicalString)
+    .digest("hex");
+
+  const headers: Record<string, string> = {
+    "X-API-Key": clientId,
+    "X-Timestamp": timestamp,
+    "X-Nonce": nonce,
+    "X-Signature": signature,
+    Accept: "application/json",
+  };
+
+  if (idempotencyKey) {
+    headers["X-Idempotency-Key"] = idempotencyKey;
+  }
+
+  if (method === "POST") {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return { headers, canonicalString, rawBodyString };
+}
 
 /**
  * Normalize Kenyan mobile input to standard Safaricom/Airtel format 254XXXXXXXXX
@@ -30,50 +161,85 @@ export function normalizeNestlinkPhone(phone: string): string {
 }
 
 /**
- * Initiates an M-Pesa STK Push payment via Nestlink API
+ * Initiates an M-Pesa STK Push payment via NestLink API with cryptographic HMAC-SHA256 authentication
  */
 export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Promise<NestlinkStkResponse> {
-  const apiKey = process.env.NESTLINK_API_KEY;
-  const baseUrl = process.env.NESTLINK_BASE_URL || "https://api.nestlink.io/v1";
+  const config = getNestlinkConfig();
   const formattedPhone = normalizeNestlinkPhone(payload.phone);
   const roundedAmount = Math.ceil(payload.amount);
+  const reference = (payload.accountReference ?? `KCSE-${Date.now().toString().slice(-6)}`).toUpperCase();
+  const description = payload.description ?? "Payment for KCSE Access";
 
-  // If live Nestlink credentials exist, dispatch to live Nestlink API
-  if (apiKey && apiKey.trim() !== "") {
+  // Build the standardized STK push request body according to NestLink specifications
+  const requestBody = {
+    account_number: config.accountNumber,
+    phone: formattedPhone,
+    amount: roundedAmount,
+    reference,
+    description,
+    callback_url: payload.callbackUrl || "https://your-domain.com/api/payments/callback",
+  };
+
+  // If live credentials are provided and sandbox simulation is disabled, execute live request
+  if (config.hasLiveCredentials && !config.isSimulationEnabled) {
+    const path = "v1/stkpush/initiate";
+    const endpointUrl = `${config.baseUrl}/${path}`;
+
+    const { headers, rawBodyString } = createNestlinkSignature({
+      method: "POST",
+      path,
+      body: requestBody,
+      clientId: config.clientId,
+      clientSecret: config.clientSecret,
+    });
+
     try {
-      const response = await axios.post(
-        `${baseUrl}/stk-push`,
-        {
-          amount: roundedAmount,
-          phone: formattedPhone,
-          accountReference: payload.accountReference ?? "KCSE-2026",
-          description: payload.description ?? "KCSE Exam Access Subscription",
-          metadata: payload.metadata ?? {},
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-          },
-          timeout: 15000,
-        }
-      );
+      const response = await axios.post(endpointUrl, rawBodyString, {
+        headers,
+        timeout: 25000,
+      });
 
       const resData = response.data?.data ?? response.data;
+      const checkoutRequestId = String(
+        resData.checkoutRequestId ||
+        resData.CheckoutRequestID ||
+        resData.checkout_id ||
+        resData.id ||
+        resData.reference ||
+        `NL_${Date.now()}`
+      );
+      const transactionId = String(
+        resData.transactionId ||
+        resData.MerchantRequestID ||
+        resData.reference ||
+        reference
+      );
+      const customerMessage =
+        response.data?.message ||
+        resData.CustomerMessage ||
+        resData.message ||
+        "STK push prompt sent. Please check your phone to enter your M-Pesa PIN.";
+
       return {
-        checkoutRequestId: String(resData.checkoutRequestId || resData.checkout_id || `NL_${Date.now()}`),
-        transactionId: String(resData.transactionId || resData.reference || `NSTL_${Date.now()}`),
+        checkoutRequestId,
+        transactionId,
         status: "PENDING",
-        message: response.data?.message ?? "Nestlink STK push prompt dispatched. Check your phone.",
+        message: customerMessage,
         isSimulated: false,
       };
     } catch (err: unknown) {
-      console.warn("[Nestlink] Live STK dispatch error, falling back to simulation:", err instanceof Error ? err.message : err);
+      const errorMsg =
+        (axios.isAxiosError(err) && (err.response?.data?.message || err.response?.data?.error || err.response?.data?.errorMessage)) ||
+        (err instanceof Error ? err.message : "Failed to reach NestLink gateway.");
+
+      // If in production mode, bubble up error
+      if (!config.isSimulationEnabled) {
+        throw new Error(`[NestLink Gateway] ${errorMsg}`);
+      }
     }
   }
 
-  // Realistic fallback / preview simulation mode
+  // Realistic Sandbox / Instant Mock Simulation Mode
   const randomRef = `NSTL${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const checkoutId = `NL_CHK_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
@@ -81,22 +247,127 @@ export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Prom
     checkoutRequestId: checkoutId,
     transactionId: randomRef,
     status: "PENDING",
-    message: `Nestlink STK prompt dispatched to 0${formattedPhone.slice(3)}. Check your phone to enter M-Pesa PIN.`,
+    message: `NestLink STK prompt dispatched to 0${formattedPhone.slice(3)}. Check your phone to enter M-Pesa PIN.`,
     isSimulated: true,
   };
+}
+
+/**
+ * Check NestLink merchant balance with HMAC-SHA256 signature
+ */
+export async function checkNestlinkBalance(accountNumber?: string): Promise<NestlinkBalanceResponse> {
+  const config = getNestlinkConfig();
+  const accNum = accountNumber || config.accountNumber;
+
+  if (config.hasLiveCredentials && !config.isSimulationEnabled) {
+    const path = `v1/balance/${accNum}`;
+    const endpointUrl = `${config.baseUrl}/${path}`;
+
+    const { headers } = createNestlinkSignature({
+      method: "GET",
+      path,
+      clientId: config.clientId,
+      clientSecret: config.clientSecret,
+    });
+
+    try {
+      const response = await axios.get(endpointUrl, {
+        headers,
+        timeout: 15000,
+      });
+      const data = response.data?.data ?? response.data;
+      return {
+        account_number: accNum,
+        balance: Number(data.balance ?? data.amount ?? 0),
+        currency: data.currency || "KES",
+        status: "success",
+        isSimulated: false,
+      };
+    } catch (err) {
+      console.warn("[Nestlink] Balance check live request error:", err instanceof Error ? err.message : err);
+    }
+  }
+
+  // Sandbox simulation response
+  return {
+    account_number: accNum,
+    balance: 24850,
+    currency: "KES",
+    status: "success",
+    isSimulated: true,
+  };
+}
+
+/**
+ * Query payment status directly from the Nestlink gateway
+ */
+export async function queryNestlinkPaymentStatus(
+  checkoutRequestId: string,
+  transactionId?: string
+): Promise<NestlinkStatusQueryResponse> {
+  const config = getNestlinkConfig();
+  if (!config.hasLiveCredentials || config.isSimulationEnabled) {
+    return { status: "PENDING" };
+  }
+
+  try {
+    const path = `v1/stkpush/query`;
+    const { headers, rawBodyString } = createNestlinkSignature({
+      method: "POST",
+      path,
+      body: {
+        account_number: config.accountNumber,
+        checkout_request_id: checkoutRequestId,
+        checkoutRequestId,
+        transactionId,
+      },
+      clientId: config.clientId,
+      clientSecret: config.clientSecret,
+    });
+
+    const response = await axios.post(`${config.baseUrl}/${path}`, rawBodyString, {
+      headers,
+      timeout: 12000,
+    });
+
+    const data = response.data?.data ?? response.data;
+    const rawStatus = String(data.status || data.ResultCode || data.state || "").toUpperCase();
+
+    if (rawStatus === "SUCCESS" || rawStatus === "COMPLETED" || rawStatus === "PAID" || rawStatus === "0") {
+      const receipt = data.mpesaReceiptNumber || data.receiptNumber || data.receipt || data.transactionId;
+      return {
+        status: "SUCCESS",
+        receipt: receipt ? String(receipt) : undefined,
+        message: data.message || "Payment verified successfully",
+      };
+    }
+
+    if (rawStatus === "FAILED" || rawStatus === "CANCELLED" || rawStatus === "EXPIRED" || (data.ResultCode && data.ResultCode !== 0)) {
+      return {
+        status: "FAILED",
+        message: data.ResultDesc || data.message || "Payment failed or was cancelled",
+      };
+    }
+
+    return { status: "PENDING" };
+  } catch (err) {
+    console.warn("[Nestlink] Query status lookup error:", err instanceof Error ? err.message : err);
+    return { status: "PENDING" };
+  }
 }
 
 /**
  * Verify Nestlink Webhook HMAC-SHA256 signature
  */
 export function verifyNestlinkWebhook(rawBody: string, signature: string): boolean {
-  const webhookSecret = process.env.NESTLINK_WEBHOOK_SECRET;
-  if (!webhookSecret) return true; // allow in dev if secret not yet configured
+  const config = getNestlinkConfig();
+  const secret = config.webhookSecret || config.clientSecret;
+  if (!secret) return true; // If webhook secret is not configured, allow processing
   if (!signature) return false;
 
   try {
     const expectedSignature = crypto
-      .createHmac("sha256", webhookSecret)
+      .createHmac("sha256", secret)
       .update(rawBody)
       .digest("hex");
 
@@ -108,3 +379,5 @@ export function verifyNestlinkWebhook(rawBody: string, signature: string): boole
     return false;
   }
 }
+
+

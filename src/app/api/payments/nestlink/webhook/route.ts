@@ -15,10 +15,37 @@ export async function POST(req: Request) {
 
   try {
     const body = JSON.parse(rawBody);
-    const event = body?.event as string | undefined;
-    const data = body?.data ?? body;
-    const checkoutRequestId = (data?.checkoutRequestId || data?.checkout_id || data?.reference) as string | undefined;
-    const transactionId = (data?.transactionId || data?.receiptNumber || data?.id) as string | undefined;
+
+    // Support both Nestlink events and native Safaricom Daraja stkCallback structures
+    const stkCallback = body?.Body?.stkCallback;
+    const isDaraja = Boolean(stkCallback);
+
+    let checkoutRequestId: string | undefined;
+    let transactionId: string | undefined;
+    let isFailed = false;
+    let receiptNumber: string | undefined;
+
+    if (isDaraja) {
+      checkoutRequestId = stkCallback.CheckoutRequestID || stkCallback.MerchantRequestID;
+      if (stkCallback.ResultCode !== 0) {
+        isFailed = true;
+      } else {
+        const items = (stkCallback.CallbackMetadata?.Item as Array<{ Name: string; Value: unknown }>) || [];
+        const receiptItem = items.find((it) => it.Name === "MpesaReceiptNumber");
+        receiptNumber = receiptItem ? String(receiptItem.Value) : undefined;
+        transactionId = receiptNumber || checkoutRequestId;
+      }
+    } else {
+      const event = body?.event as string | undefined;
+      const data = body?.data ?? body;
+      checkoutRequestId = (data?.checkoutRequestId || data?.CheckoutRequestID || data?.checkout_id || data?.reference) as string | undefined;
+      transactionId = (data?.transactionId || data?.receiptNumber || data?.id) as string | undefined;
+      receiptNumber = (data?.mpesaReceiptNumber || data?.receiptNumber || transactionId) as string | undefined;
+
+      if (event === "payment.failed" || data?.status === "FAILED" || data?.status === "CANCELLED") {
+        isFailed = true;
+      }
+    }
 
     if (!checkoutRequestId && !transactionId) {
       return NextResponse.json({ ok: true, message: "No identifier found" });
@@ -37,7 +64,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, message: "Payment not found" });
     }
 
-    if (event === "payment.failed" || data?.status === "FAILED") {
+    if (isFailed) {
       await prisma.payment.update({
         where: { id: payment.id },
         data: { status: "FAILED", metadata: body },
@@ -46,7 +73,7 @@ export async function POST(req: Request) {
     }
 
     // Success event
-    const receipt = String(transactionId || `NL${Date.now()}`);
+    const receipt = receiptNumber || String(transactionId || `NL${Date.now()}`);
     const updated = await prisma.payment.update({
       where: { id: payment.id },
       data: {

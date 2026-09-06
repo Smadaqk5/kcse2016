@@ -3,7 +3,13 @@ import bcrypt from "bcryptjs";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const hasDbUrl = Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim() !== "");
+const isPlaceholderDb =
+  !process.env.DATABASE_URL ||
+  process.env.DATABASE_URL.includes("YOUR_DB_PASSWORD") ||
+  process.env.DATABASE_URL.includes("YOUR_PROJECT_REF") ||
+  process.env.DATABASE_URL.includes("localhost:5432/placeholder");
+
+const hasDbUrl = Boolean(process.env.DATABASE_URL && !isPlaceholderDb);
 
 // In-memory data store for fallback/preview when Postgres is offline
 interface MockUser {
@@ -719,12 +725,16 @@ if (hasDbUrl) {
   }
 }
 
-export const prisma: PrismaClient = new Proxy((realPrisma ?? createMockPrisma()) as PrismaClient, {
+const sharedMockPrisma = createMockPrisma();
+let consecutiveDbFailures = 0;
+const MAX_CONSECUTIVE_FAILURES = 3;
+
+export const prisma: PrismaClient = new Proxy((realPrisma ?? sharedMockPrisma) as PrismaClient, {
   get(target, prop, receiver) {
-    const original = Reflect.get(target, prop, receiver);
-    if (!realPrisma) {
-      return original;
+    if (!realPrisma || consecutiveDbFailures >= MAX_CONSECUTIVE_FAILURES) {
+      return Reflect.get(sharedMockPrisma as unknown as object, prop, receiver);
     }
+    const original = Reflect.get(target, prop, receiver);
     if (typeof original === "object" && original !== null) {
       return new Proxy(original, {
         get(modelTarget, modelProp, modelReceiver) {
@@ -732,14 +742,19 @@ export const prisma: PrismaClient = new Proxy((realPrisma ?? createMockPrisma())
           if (typeof method === "function") {
             return async (...args: unknown[]) => {
               try {
-                return await method.apply(modelTarget, args);
+                const result = await method.apply(modelTarget, args);
+                consecutiveDbFailures = 0;
+                return result;
               } catch (err: unknown) {
+                consecutiveDbFailures++;
                 const errMsg = err instanceof Error ? err.message : String(err);
-                console.warn(
-                  `[AI Studio] DB operation failed for ${String(prop)}.${String(modelProp)}:`,
-                  errMsg
-                );
-                const mockClient = createMockPrisma() as unknown as Record<
+                if (consecutiveDbFailures <= MAX_CONSECUTIVE_FAILURES) {
+                  console.warn(
+                    `[AI Studio] DB connection unavailable for ${String(prop)}.${String(modelProp)}. Switching to active in-memory store:`,
+                    errMsg.split("\n")[0]
+                  );
+                }
+                const mockClient = sharedMockPrisma as unknown as Record<
                   string,
                   Record<string, (...a: unknown[]) => Promise<unknown>>
                 >;

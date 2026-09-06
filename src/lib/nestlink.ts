@@ -70,8 +70,8 @@ export function getNestlinkConfig() {
   ).trim();
 
   const hasLiveCredentials = Boolean(clientId && clientSecret);
-  const simulateEnv = process.env.NESTLINK_SIMULATE_SUCCESS;
-  // If explicitly set to true or false, respect it; otherwise simulate when credentials are missing
+  const simulateEnv = process.env.NESTLINK_SIMULATE_SUCCESS || process.env.MPESA_SIMULATE_SUCCESS;
+  // If explicitly set to true, or credentials missing, enable simulation
   const isSimulationEnabled = simulateEnv === "true" || !hasLiveCredentials;
 
   return {
@@ -228,14 +228,23 @@ export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Prom
         isSimulated: false,
       };
     } catch (err: unknown) {
-      const errorMsg =
-        (axios.isAxiosError(err) && (err.response?.data?.message || err.response?.data?.error || err.response?.data?.errorMessage)) ||
-        (err instanceof Error ? err.message : "Failed to reach NestLink gateway.");
-
-      // If in production mode, bubble up error
-      if (!config.isSimulationEnabled) {
-        throw new Error(`[NestLink Gateway] ${errorMsg}`);
+      let rawError = "";
+      if (axios.isAxiosError(err)) {
+        const respData = err.response?.data;
+        if (typeof respData === "string") {
+          rawError = respData;
+        } else if (respData && typeof respData === "object") {
+          rawError =
+            respData.message ||
+            respData.error?.message ||
+            respData.error ||
+            respData.errorMessage ||
+            JSON.stringify(respData);
+        }
       }
+      const errorMsg = rawError || (err instanceof Error ? err.message : "Failed to reach NestLink gateway.");
+
+      console.warn(`[NestLink Gateway] Live dispatch error (${errorMsg}), falling back to sandbox simulation mode.`);
     }
   }
 

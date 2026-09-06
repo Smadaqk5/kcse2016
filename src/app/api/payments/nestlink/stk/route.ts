@@ -154,8 +154,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Auto-activate in simulation mode if configured
-  const autoSimulate = process.env.NESTLINK_SIMULATE_SUCCESS === "true" || process.env.MPESA_SIMULATE_SUCCESS === "true";
+  // Auto-activate ONLY if simulation mode is explicitly enabled and result is simulated
+  const autoSimulate = Boolean(process.env.NESTLINK_SIMULATE_SUCCESS === "true" && stk.isSimulated);
   if (autoSimulate && stk.isSimulated) {
     const updated = await prisma.payment.update({
       where: { id: payment.id },

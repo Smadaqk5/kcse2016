@@ -182,9 +182,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // If sandbox / instant mock simulation mode is active and simulated, auto-activate
+    // Auto-activate ONLY if simulation mode is explicitly enabled and result is simulated
     const isAutoSimulated =
-      (process.env.NESTLINK_SIMULATE_SUCCESS === "true" || !config.hasLiveCredentials) &&
+      process.env.NESTLINK_SIMULATE_SUCCESS === "true" &&
       Boolean(stkResult.isSimulated);
 
     if (isAutoSimulated) {

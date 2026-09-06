@@ -55,13 +55,15 @@ export function getNestlinkConfig() {
   const accountNumber = (
     process.env.NESTLINK_ACCOUNT_NUMBER ||
     process.env.NESTLINK_SHORTCODE ||
-    "25045"
+    "28811"
   ).trim();
 
   const baseUrl = (
     process.env.NESTLINK_BASE_URL ||
-    "https://automate.nestlink.co.ke/api"
+    "https://automate.nestlink.co.ke"
   ).replace(/\/$/, "");
+
+  const baseOrigin = baseUrl.replace(/\/api\/?$/, "");
 
   const webhookSecret = (
     process.env.NESTLINK_WEBHOOK_SECRET ||
@@ -70,15 +72,17 @@ export function getNestlinkConfig() {
   ).trim();
 
   const hasLiveCredentials = Boolean(clientId && clientSecret);
-  const simulateEnv = process.env.NESTLINK_SIMULATE_SUCCESS || process.env.MPESA_SIMULATE_SUCCESS;
-  // If explicitly set to true, or credentials missing, enable simulation
-  const isSimulationEnabled = simulateEnv === "true" || !hasLiveCredentials;
+  // Never enable simulation if live credentials exist, unless explicitly requested via NESTLINK_SIMULATE_SUCCESS
+  const isSimulationEnabled =
+    process.env.NESTLINK_SIMULATE_SUCCESS === "true" ||
+    (!hasLiveCredentials && process.env.MPESA_SIMULATE_SUCCESS === "true");
 
   return {
     clientId,
     clientSecret,
     accountNumber,
     baseUrl,
+    baseOrigin,
     webhookSecret,
     hasLiveCredentials,
     isSimulationEnabled,
@@ -98,7 +102,7 @@ export function createNestlinkSignature({
   clientSecret,
 }: {
   method: "GET" | "POST";
-  path: string; // e.g., 'v1/stkpush/initiate' or 'v1/balance/25045'
+  path: string; // e.g., 'api/v1/stkpush/initiate' or 'api/v1/balance'
   body?: unknown;
   clientId: string;
   clientSecret: string;
@@ -107,7 +111,10 @@ export function createNestlinkSignature({
   canonicalString: string;
   rawBodyString: string;
 } {
-  const cleanPath = path.replace(/^\/+/, "");
+  let cleanPath = path.replace(/^\/+/, "");
+  if (!cleanPath.startsWith("api/")) {
+    cleanPath = `api/${cleanPath}`;
+  }
   const timestamp = String(Math.floor(Date.now() / 1000));
   const nonce = crypto.randomUUID();
   const idempotencyKey = method === "POST" ? crypto.randomUUID() : "";
@@ -118,6 +125,9 @@ export function createNestlinkSignature({
   if (method === "POST" && body !== undefined && body !== null) {
     rawBodyString = typeof body === "string" ? body : JSON.stringify(body);
     bodyHash = crypto.createHash("sha256").update(rawBodyString).digest("hex");
+  } else {
+    // Empty body requires sha256 hash of empty string
+    bodyHash = crypto.createHash("sha256").update("").digest("hex");
   }
 
   // Exact Canonical String Format:
@@ -182,8 +192,8 @@ export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Prom
 
   // If live credentials are provided and sandbox simulation is disabled, execute live request
   if (config.hasLiveCredentials && !config.isSimulationEnabled) {
-    const path = "v1/stkpush/initiate";
-    const endpointUrl = `${config.baseUrl}/${path}`;
+    const path = "api/v1/stkpush/initiate";
+    const endpointUrl = `${config.baseOrigin}/${path}`;
 
     const { headers, rawBodyString } = createNestlinkSignature({
       method: "POST",
@@ -201,9 +211,9 @@ export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Prom
 
       const resData = response.data?.data ?? response.data;
       const checkoutRequestId = String(
+        resData.checkout_id ||
         resData.checkoutRequestId ||
         resData.CheckoutRequestID ||
-        resData.checkout_id ||
         resData.id ||
         resData.reference ||
         `NL_${Date.now()}`
@@ -211,13 +221,13 @@ export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Prom
       const transactionId = String(
         resData.transactionId ||
         resData.MerchantRequestID ||
-        resData.reference ||
+        resData.correlation_id ||
         reference
       );
       const customerMessage =
+        resData.message ||
         response.data?.message ||
         resData.CustomerMessage ||
-        resData.message ||
         "STK push prompt sent. Please check your phone to enter your M-Pesa PIN.";
 
       return {
@@ -244,11 +254,12 @@ export async function initiateNestlinkStkPush(payload: NestlinkStkPayload): Prom
       }
       const errorMsg = rawError || (err instanceof Error ? err.message : "Failed to reach NestLink gateway.");
 
-      console.warn(`[NestLink Gateway] Live dispatch error (${errorMsg}), falling back to sandbox simulation mode.`);
+      // Never give a fake success or fall back to simulation when live credentials are in use
+      throw new Error(`[NestLink Gateway] ${errorMsg}`);
     }
   }
 
-  // Realistic Sandbox / Instant Mock Simulation Mode
+  // Realistic Sandbox / Instant Mock Simulation Mode (only when credentials are not configured)
   const randomRef = `NSTL${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   const checkoutId = `NL_CHK_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
@@ -269,8 +280,8 @@ export async function checkNestlinkBalance(accountNumber?: string): Promise<Nest
   const accNum = accountNumber || config.accountNumber;
 
   if (config.hasLiveCredentials && !config.isSimulationEnabled) {
-    const path = `v1/balance/${accNum}`;
-    const endpointUrl = `${config.baseUrl}/${path}`;
+    const path = "api/v1/balance";
+    const endpointUrl = `${config.baseOrigin}/${path}`;
 
     const { headers } = createNestlinkSignature({
       method: "GET",
@@ -285,9 +296,10 @@ export async function checkNestlinkBalance(accountNumber?: string): Promise<Nest
         timeout: 15000,
       });
       const data = response.data?.data ?? response.data;
+      const bal = data.available_balance !== undefined ? data.available_balance : (Number(data.available_balance_minor ?? 0) / 100);
       return {
         account_number: accNum,
-        balance: Number(data.balance ?? data.amount ?? 0),
+        balance: Number(bal),
         currency: data.currency || "KES",
         status: "success",
         isSimulated: false,

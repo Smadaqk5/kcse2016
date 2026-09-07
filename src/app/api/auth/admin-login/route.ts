@@ -68,11 +68,11 @@ export async function POST(request: Request) {
   const effectiveId = admin?.id || adminFromUserTable?.id || "admin-master";
   const effectiveUsername = admin?.username || adminFromUserTable?.username || username || "admin";
 
-  await setAdminSession({
+  const token = await setAdminSession({
     userId: effectiveId,
     role: "ADMIN",
     username: effectiveUsername,
   });
 
-  return NextResponse.json({ ok: true, redirect: "/admin/dashboard" });
+  return NextResponse.json({ ok: true, token, redirect: "/admin/dashboard" });
 }

@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'mainaadam66@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Public catalog collections: packages & subscriptionPackages
+    match /packages/{packageId} {
+      allow read: if true;
+      allow write: if request.resource.data.amount is number && request.resource.data.amount >= 0;
+    }
+
+    match /subscriptionPackages/{packageId} {
+      allow read: if true;
+      allow write: if request.resource.data.amount is number && request.resource.data.amount >= 0;
+    }
+
+    match /pricing/{pricingId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Public catalog: exam papers & revision materials
+    match /papers/{paperId} {
+      allow read: if true;
+      allow write: if request.resource.data.title is string && request.resource.data.price is number;
+      allow delete: if true;
+    }
+
+    // Users and candidates
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

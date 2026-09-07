@@ -3,6 +3,7 @@ import { getCurrentSession } from "@/lib/session";
 import { StkForm } from "@/components/forms/stk-form";
 import { prisma } from "@/lib/prisma";
 import { Zap, CheckCircle2, Lock, KeyRound } from "lucide-react";
+import { fetchPackagesFromFirestore } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,18 +17,31 @@ export default async function PricingPage() {
   let plans = fallbackPlans;
 
   try {
-    const dbPlans = await prisma.subscriptionPackage.findMany({
-      where: { isActive: true },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    });
-    if (dbPlans.length > 0) {
-      plans = dbPlans.map((plan) => ({
+    // 1. Fetch live prices from Firestore database first
+    const firestorePlans = await fetchPackagesFromFirestore().catch(() => []);
+    if (firestorePlans.length > 0) {
+      plans = firestorePlans.map((plan) => ({
         id: plan.id,
         name: plan.name,
         subscriptionType: plan.subscriptionType,
         amount: Number(plan.amount),
         durationDays: plan.durationDays,
       }));
+    } else {
+      // 2. Fallback to Prisma database
+      const dbPlans = await prisma.subscriptionPackage.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      });
+      if (dbPlans.length > 0) {
+        plans = dbPlans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          subscriptionType: plan.subscriptionType,
+          amount: Number(plan.amount),
+          durationDays: plan.durationDays,
+        }));
+      }
     }
   } catch {
     // Falls back to defaults

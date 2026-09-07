@@ -3,6 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import {
+  fetchPackagesFromFirestore,
+  savePackageToFirestore,
+  fetchPapersFromFirestore,
+  savePaperToFirestore,
+  seedFirestoreIfEmpty,
+} from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
@@ -49,14 +56,108 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [packages, papers] = await Promise.all([
+  const [prismaPackages, prismaPapers, firestorePackages, firestorePapers] = await Promise.all([
     prisma.subscriptionPackage.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     }),
     prisma.paper.findMany({
       orderBy: { createdAt: "desc" },
     }),
+    fetchPackagesFromFirestore().catch(() => []),
+    fetchPapersFromFirestore().catch(() => []),
   ]);
+
+  // Merge packages: Firestore prices take priority if present
+  const packageMap = new Map<string, Record<string, unknown>>();
+  for (const p of prismaPackages) {
+    packageMap.set(p.id, {
+      ...p,
+      amount: Number(p.amount),
+    });
+  }
+  for (const fp of firestorePackages) {
+    const existing = packageMap.get(fp.id);
+    if (existing) {
+      existing.amount = Number(fp.amount);
+      if (fp.name) existing.name = fp.name;
+    } else {
+      packageMap.set(fp.id, {
+        id: fp.id,
+        name: fp.name,
+        subscriptionType: fp.subscriptionType,
+        amount: Number(fp.amount),
+        durationDays: fp.durationDays,
+        isActive: fp.isActive,
+        sortOrder: fp.sortOrder,
+      });
+    }
+  }
+
+  const packages = Array.from(packageMap.values()).sort(
+    (a, b) => Number(a.sortOrder || 1) - Number(b.sortOrder || 1)
+  );
+
+  // Merge papers
+  const paperMap = new Map<string, Record<string, unknown>>();
+  for (const p of prismaPapers) {
+    paperMap.set(p.id, {
+      ...p,
+      price: Number(p.price),
+    });
+  }
+  for (const fp of firestorePapers) {
+    const existing = paperMap.get(fp.id);
+    if (existing) {
+      existing.price = Number(fp.price);
+    } else {
+      paperMap.set(fp.id, {
+        id: fp.id,
+        title: fp.title,
+        description: fp.description,
+        contentType: fp.contentType,
+        unitCode: fp.unitCode,
+        topic: fp.topic,
+        course: fp.course,
+        semester: fp.semester,
+        price: Number(fp.price),
+        filePath: fp.filePath,
+        isPublished: fp.isPublished,
+        createdAt: fp.createdAt ? new Date(fp.createdAt) : new Date(),
+      });
+    }
+  }
+
+  const papers = Array.from(paperMap.values()).sort(
+    (a, b) => new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime()
+  );
+
+  // If Firestore was completely empty, seed it with current packages and papers
+  if (firestorePackages.length === 0 && packages.length > 0) {
+    seedFirestoreIfEmpty(
+      packages.map((p) => ({
+        id: String(p.id),
+        name: String(p.name || "Access Pass"),
+        subscriptionType: (p.subscriptionType as "DAILY" | "WEEKLY" | "MONTHLY") || "DAILY",
+        amount: Number(p.amount) || 49,
+        durationDays: Number(p.durationDays) || 1,
+        isActive: p.isActive !== false,
+        sortOrder: Number(p.sortOrder) || 1,
+      })),
+      papers.map((p) => ({
+        id: String(p.id),
+        title: String(p.title || "KCSE Paper"),
+        description: p.description ? String(p.description) : null,
+        contentType: String(p.contentType || "PAST_PAPER"),
+        unitCode: String(p.unitCode || "GEN-01"),
+        topic: String(p.topic || "General"),
+        course: String(p.course || "KCSE"),
+        semester: String(p.semester || "1"),
+        price: Number(p.price) || 50,
+        filePath: String(p.filePath || ""),
+        isPublished: p.isPublished !== false,
+      }))
+    ).catch(() => {});
+  }
 
   return NextResponse.json(
     {
@@ -85,9 +186,17 @@ export async function PUT(req: NextRequest) {
   if (singleParsed.success) {
     const { target, id, price } = singleParsed.data;
     if (target === "PACKAGE") {
-      let updated = null;
+      let rawUpdated: {
+        id: string;
+        name: string;
+        subscriptionType: unknown;
+        amount: unknown;
+        durationDays: number;
+        isActive: boolean;
+        sortOrder: number;
+      } | null = null;
       try {
-        updated = await prisma.subscriptionPackage.update({
+        rawUpdated = await prisma.subscriptionPackage.update({
           where: { id },
           data: { amount: price },
         });
@@ -103,16 +212,35 @@ export async function PUT(req: NextRequest) {
           },
         });
         if (matched) {
-          updated = await prisma.subscriptionPackage.update({
+          rawUpdated = await prisma.subscriptionPackage.update({
             where: { id: matched.id },
             data: { amount: price },
           });
         }
       }
 
-      if (!updated) {
+      if (!rawUpdated) {
         return NextResponse.json({ error: `Subscription package '${id}' not found.` }, { status: 404 });
       }
+
+      const updated = {
+        ...rawUpdated,
+        subscriptionType: (String(rawUpdated.subscriptionType) as "DAILY" | "WEEKLY" | "MONTHLY") || "DAILY",
+        amount: Number(rawUpdated.amount),
+      };
+
+      // Sync to Firestore immediately
+      await savePackageToFirestore({
+        id: updated.id,
+        name: updated.name,
+        subscriptionType: updated.subscriptionType,
+        amount: Number(price),
+        durationDays: updated.durationDays,
+        isActive: updated.isActive !== false,
+        sortOrder: updated.sortOrder || 1,
+      }).catch((err) => {
+        console.warn("[pricing] Firestore sync package error:", err);
+      });
 
       revalidatePublicPages();
       return NextResponse.json({ success: true, updated });
@@ -122,6 +250,25 @@ export async function PUT(req: NextRequest) {
           where: { id },
           data: { price },
         });
+
+        // Sync to Firestore immediately
+        await savePaperToFirestore({
+          id: updated.id,
+          title: updated.title,
+          description: updated.description,
+          contentType: updated.contentType,
+          unitCode: updated.unitCode,
+          topic: updated.topic,
+          course: updated.course,
+          semester: updated.semester,
+          price: Number(price),
+          filePath: updated.filePath || "",
+          isPublished: updated.isPublished !== false,
+          createdAt: updated.createdAt instanceof Date ? updated.createdAt.toISOString() : undefined,
+        }).catch((err) => {
+          console.warn("[pricing] Firestore sync paper error:", err);
+        });
+
         revalidatePublicPages();
         return NextResponse.json({ success: true, updated });
       } catch (err: unknown) {
@@ -145,6 +292,17 @@ export async function PUT(req: NextRequest) {
             data: { amount: item.amount },
           });
           updatedPackages.push(p);
+
+          // Sync to Firestore
+          savePackageToFirestore({
+            id: p.id,
+            name: p.name,
+            subscriptionType: p.subscriptionType,
+            amount: Number(item.amount),
+            durationDays: p.durationDays,
+            isActive: p.isActive !== false,
+            sortOrder: p.sortOrder || 1,
+          }).catch(() => {});
         } catch {
           // ignore individual failure
         }
@@ -159,6 +317,21 @@ export async function PUT(req: NextRequest) {
             data: { price: item.price },
           });
           updatedPapers.push(p);
+
+          // Sync to Firestore
+          savePaperToFirestore({
+            id: p.id,
+            title: p.title,
+            description: p.description,
+            contentType: p.contentType,
+            unitCode: p.unitCode,
+            topic: p.topic,
+            course: p.course,
+            semester: p.semester,
+            price: Number(item.price),
+            filePath: p.filePath || "",
+            isPublished: p.isPublished !== false,
+          }).catch(() => {});
         } catch {
           // ignore individual failure
         }

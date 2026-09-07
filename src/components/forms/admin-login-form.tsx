@@ -39,6 +39,12 @@ export function AdminLoginForm() {
         return;
       }
 
+      if (data.token) {
+        try {
+          localStorage.setItem("kcse_admin_token", data.token);
+        } catch {}
+      }
+
       setSuccess("Authentication verified! Opening Admin Dashboard...");
       setTimeout(() => {
         window.location.href = data.redirect || "/admin/dashboard";

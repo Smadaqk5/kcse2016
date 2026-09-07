@@ -1,5 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import {
+  fetchPackagesFromFirestore,
+  savePackageToFirestore,
+  deletePackageFromFirestore,
+  fetchPapersFromFirestore,
+  savePaperToFirestore,
+  deletePaperFromFirestore,
+} from "./firebase-db";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
@@ -501,6 +509,30 @@ function createMockPrisma(): PrismaClient {
 
   const packageMethods = {
     findMany: async ({ where }: { where?: { isActive?: boolean }; orderBy?: unknown } = {}) => {
+      try {
+        const fp = await fetchPackagesFromFirestore();
+        if (fp && fp.length > 0) {
+          for (const item of fp) {
+            const found = mockStore.packages.find((p) => p.id === item.id || p.subscriptionType === item.subscriptionType);
+            if (found) {
+              found.amount = Number(item.amount);
+              found.name = item.name || found.name;
+            } else {
+              mockStore.packages.push({
+                id: item.id,
+                name: item.name,
+                subscriptionType: item.subscriptionType,
+                amount: Number(item.amount),
+                durationDays: item.durationDays,
+                isActive: item.isActive,
+                sortOrder: item.sortOrder,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+            }
+          }
+        }
+      } catch {}
       let list = [...mockStore.packages];
       if (where?.isActive !== undefined) {
         list = list.filter((p) => p.isActive === where.isActive);
@@ -539,13 +571,32 @@ function createMockPrisma(): PrismaClient {
         updatedAt: new Date(),
       };
       mockStore.packages.push(pkg);
+      savePackageToFirestore({
+        id: pkg.id,
+        name: pkg.name,
+        subscriptionType: pkg.subscriptionType,
+        amount: pkg.amount,
+        durationDays: pkg.durationDays,
+        isActive: pkg.isActive,
+        sortOrder: pkg.sortOrder,
+      }).catch(() => {});
       return pkg;
     },
     update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
       const idx = mockStore.packages.findIndex((p) => p.id === where.id);
       if (idx !== -1) {
         mockStore.packages[idx] = { ...mockStore.packages[idx], ...data, updatedAt: new Date() } as MockPackage;
-        return mockStore.packages[idx];
+        const updated = mockStore.packages[idx];
+        savePackageToFirestore({
+          id: updated.id,
+          name: updated.name,
+          subscriptionType: updated.subscriptionType,
+          amount: Number(updated.amount),
+          durationDays: updated.durationDays,
+          isActive: updated.isActive,
+          sortOrder: updated.sortOrder,
+        }).catch(() => {});
+        return updated;
       }
       throw new Error("Subscription package not found");
     },
@@ -553,6 +604,7 @@ function createMockPrisma(): PrismaClient {
       const idx = mockStore.packages.findIndex((p) => p.id === where.id);
       if (idx !== -1) {
         const [deleted] = mockStore.packages.splice(idx, 1);
+        deletePackageFromFirestore(deleted.id).catch(() => {});
         return deleted;
       }
       return null;
@@ -574,6 +626,15 @@ function createMockPrisma(): PrismaClient {
       );
       if (existing) {
         Object.assign(existing, update, { updatedAt: new Date() });
+        savePackageToFirestore({
+          id: existing.id,
+          name: existing.name,
+          subscriptionType: existing.subscriptionType,
+          amount: Number(existing.amount),
+          durationDays: existing.durationDays,
+          isActive: existing.isActive,
+          sortOrder: existing.sortOrder,
+        }).catch(() => {});
         return existing;
       }
       return packageMethods.create({ data: create });
@@ -641,6 +702,36 @@ function createMockPrisma(): PrismaClient {
 
   const paperMethods = {
     findMany: async ({ where, take }: { where?: { isPublished?: boolean }; take?: number; orderBy?: unknown } = {}) => {
+      try {
+        const fp = await fetchPapersFromFirestore();
+        if (fp && fp.length > 0) {
+          for (const item of fp) {
+            const found = mockStore.papers.find((p) => p.id === item.id);
+            if (found) {
+              found.price = Number(item.price);
+              found.title = item.title;
+              if (item.unitCode) found.unitCode = item.unitCode;
+              if (item.topic) found.topic = item.topic;
+            } else {
+              mockStore.papers.push({
+                id: item.id,
+                title: item.title,
+                description: item.description || null,
+                contentType: item.contentType as "PAST_PAPER" | "REVISION_NOTE" | "MOCK_EXAM",
+                unitCode: item.unitCode || "GEN-01",
+                topic: item.topic || "General",
+                course: item.course || "KCSE",
+                semester: item.semester || "Term 1",
+                price: Number(item.price),
+                filePath: item.filePath || "default.pdf",
+                isPublished: item.isPublished !== false,
+                createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+                updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+              });
+            }
+          }
+        }
+      } catch {}
       let list = [...mockStore.papers];
       if (where?.isPublished !== undefined) {
         list = list.filter((p) => p.isPublished === where.isPublished);
@@ -649,7 +740,32 @@ function createMockPrisma(): PrismaClient {
       return list;
     },
     findUnique: async ({ where }: { where: { id: string } }) => {
-      return mockStore.papers.find((p) => p.id === where.id) || null;
+      const found = mockStore.papers.find((p) => p.id === where.id);
+      if (found) return found;
+      try {
+        const fp = await fetchPapersFromFirestore();
+        const fromFs = fp.find((p) => p.id === where.id);
+        if (fromFs) {
+          const item: MockPaper = {
+            id: fromFs.id,
+            title: fromFs.title,
+            description: fromFs.description || null,
+            contentType: fromFs.contentType as "PAST_PAPER" | "REVISION_NOTE" | "MOCK_EXAM",
+            unitCode: fromFs.unitCode || "GEN-01",
+            topic: fromFs.topic || "General",
+            course: fromFs.course || "KCSE",
+            semester: fromFs.semester || "Term 1",
+            price: Number(fromFs.price),
+            filePath: fromFs.filePath || "default.pdf",
+            isPublished: fromFs.isPublished !== false,
+            createdAt: fromFs.createdAt ? new Date(fromFs.createdAt) : new Date(),
+            updatedAt: fromFs.updatedAt ? new Date(fromFs.updatedAt) : new Date(),
+          };
+          mockStore.papers.push(item);
+          return item;
+        }
+      } catch {}
+      return null;
     },
     findFirst: async ({ where }: { where?: { id?: string } } = {}) => {
       if (!where) return mockStore.papers[0] || null;
@@ -672,6 +788,19 @@ function createMockPrisma(): PrismaClient {
         updatedAt: new Date(),
       };
       mockStore.papers.unshift(paper);
+      savePaperToFirestore({
+        id: paper.id,
+        title: paper.title,
+        description: paper.description,
+        contentType: paper.contentType,
+        unitCode: paper.unitCode,
+        topic: paper.topic,
+        course: paper.course,
+        semester: paper.semester,
+        price: paper.price,
+        filePath: paper.filePath,
+        isPublished: paper.isPublished,
+      }).catch(() => {});
       return paper;
     },
     update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
@@ -683,7 +812,21 @@ function createMockPrisma(): PrismaClient {
           price: data.price !== undefined ? Number(data.price) : mockStore.papers[idx].price,
           updatedAt: new Date(),
         } as MockPaper;
-        return mockStore.papers[idx];
+        const updated = mockStore.papers[idx];
+        savePaperToFirestore({
+          id: updated.id,
+          title: updated.title,
+          description: updated.description,
+          contentType: updated.contentType,
+          unitCode: updated.unitCode,
+          topic: updated.topic,
+          course: updated.course,
+          semester: updated.semester,
+          price: updated.price,
+          filePath: updated.filePath,
+          isPublished: updated.isPublished,
+        }).catch(() => {});
+        return updated;
       }
       throw new Error("Paper not found");
     },
@@ -691,6 +834,7 @@ function createMockPrisma(): PrismaClient {
       const idx = mockStore.papers.findIndex((p) => p.id === where.id);
       if (idx !== -1) {
         const [deleted] = mockStore.papers.splice(idx, 1);
+        deletePaperFromFirestore(deleted.id).catch(() => {});
         return deleted;
       }
       return null;

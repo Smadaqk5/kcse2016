@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "Paper": {
+      "title": "Paper",
+      "description": "KCSE Examination Paper or revision PDF document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 300 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "contentType": { "type": "string", "enum": ["PAST_PAPER", "REVISION_NOTE", "MOCK_EXAM"] },
+        "unitCode": { "type": "string", "maxLength": 50 },
+        "topic": { "type": "string", "maxLength": 100 },
+        "course": { "type": "string", "maxLength": 50 },
+        "semester": { "type": "string", "maxLength": 50 },
+        "price": { "type": "number" },
+        "filePath": { "type": "string", "maxLength": 500 },
+        "isPublished": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "price", "isPublished"]
+    },
+    "SubscriptionPackage": {
+      "title": "SubscriptionPackage",
+      "description": "Access pass tier with price and duration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "subscriptionType": { "type": "string", "enum": ["DAILY", "WEEKLY", "MONTHLY"] },
+        "amount": { "type": "number" },
+        "durationDays": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "sortOrder": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "subscriptionType", "amount", "durationDays"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Registered candidate profile with access code",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "username": { "type": "string", "maxLength": 100 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "role": { "type": "string", "enum": ["ADMIN", "SUBSCRIBER"] },
+        "isActive": { "type": "boolean" },
+        "twoFactorSecret": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["username", "role"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "M-Pesa payment record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "SUCCESS", "FAILED"] },
+        "phone": { "type": "string", "maxLength": 30 },
+        "mpesaReceiptNumber": { "type": "string", "maxLength": 50 },
+        "subscriptionType": { "type": "string" },
+        "paperId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["amount", "status", "phone"]
+    }
+  },
+  "firestore": {
+    "/papers/{paperId}": {
+      "schema": "Paper",
+      "description": "KCSE Examination papers catalog"
+    },
+    "/packages/{packageId}": {
+      "schema": "SubscriptionPackage",
+      "description": "Subscription pricing and access packages"
+    },
+    "/subscriptionPackages/{packageId}": {
+      "schema": "SubscriptionPackage",
+      "description": "Subscription packages alternative alias"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Candidate and user accounts"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "M-Pesa transaction records"
+    }
+  }
+}

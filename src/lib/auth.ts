@@ -42,13 +42,14 @@ export async function setUserSession(payload: SessionPayload) {
   const token = signSession(payload);
   const cookieOptions = {
     httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none" as const,
+    secure: true,
     path: "/",
     maxAge: SESSION_DURATION_MS / 1000,
   };
   jar.set(SESSION_COOKIE, token, cookieOptions);
   jar.delete(ADMIN_COOKIE);
+  return token;
 }
 
 export async function setAdminSession(payload: SessionPayload) {
@@ -56,14 +57,15 @@ export async function setAdminSession(payload: SessionPayload) {
   const token = signSession(payload);
   const cookieOptions = {
     httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    sameSite: "none" as const,
+    secure: true,
     path: "/",
     maxAge: SESSION_DURATION_MS / 1000,
   };
   // Set both admin-specific cookie and general session cookie to guarantee access
   jar.set(ADMIN_COOKIE, token, cookieOptions);
   jar.set(SESSION_COOKIE, token, cookieOptions);
+  return token;
 }
 
 export async function clearSessions() {

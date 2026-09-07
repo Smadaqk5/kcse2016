@@ -13,13 +13,24 @@ type PackageItem = {
   sortOrder: number;
 };
 
+function getAdminAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("kcse_admin_token");
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+}
+
 export function AdminTools() {
   const [status, setStatus] = useState("");
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   async function loadPackages() {
-    const res = await fetch("/api/admin/subscription-packages");
+    const res = await fetch("/api/admin/subscription-packages", {
+      headers: { ...getAdminAuthHeaders() },
+    });
     if (!res.ok) return;
     const data = await res.json();
     setPackages(
@@ -32,7 +43,9 @@ export function AdminTools() {
 
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/admin/subscription-packages")
+    fetch("/api/admin/subscription-packages", {
+      headers: { ...getAdminAuthHeaders() },
+    })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: Array<PackageItem & { amount: string | number }>) => {
         if (isMounted && Array.isArray(data)) {
@@ -59,14 +72,23 @@ export function AdminTools() {
     };
     const res = await fetch("/api/admin/users", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...getAdminAuthHeaders(),
+      },
       body: JSON.stringify(payload),
     });
     setStatus(res.ok ? "User created successfully." : "Failed to create user.");
   }
 
   async function uploadPaper(formData: FormData) {
-    const res = await fetch("/api/admin/papers", { method: "POST", body: formData });
+    const res = await fetch("/api/admin/papers", {
+      method: "POST",
+      headers: {
+        ...getAdminAuthHeaders(),
+      },
+      body: formData,
+    });
     if (res.ok) {
       setStatus("Paper uploaded and published successfully! Reloading...");
       setTimeout(() => {
@@ -89,7 +111,10 @@ export function AdminTools() {
     };
     const res = await fetch("/api/admin/subscription-packages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...getAdminAuthHeaders(),
+      },
       body: JSON.stringify(payload),
     });
     setStatus(res.ok ? "Subscription package added." : "Failed to add package.");
@@ -99,7 +124,10 @@ export function AdminTools() {
   async function updatePackage(pkg: PackageItem) {
     const res = await fetch(`/api/admin/subscription-packages/${pkg.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...getAdminAuthHeaders(),
+      },
       body: JSON.stringify(pkg),
     });
     setStatus(res.ok ? "Package updated." : "Failed to update package.");
@@ -112,6 +140,9 @@ export function AdminTools() {
   async function deletePackage(id: string) {
     const res = await fetch(`/api/admin/subscription-packages/${id}`, {
       method: "DELETE",
+      headers: {
+        ...getAdminAuthHeaders(),
+      },
     });
     setStatus(res.ok ? "Package deleted." : "Failed to delete package.");
     if (res.ok) await loadPackages();

@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { fetchPackagesFromFirestore } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    // 1. Fetch live prices from Firestore database first
+    const firestorePackages = await fetchPackagesFromFirestore().catch(() => []);
+    if (firestorePackages.length > 0) {
+      return NextResponse.json(
+        firestorePackages.map((p) => ({
+          id: p.id,
+          name: p.name,
+          subscriptionType: p.subscriptionType,
+          amount: Number(p.amount),
+          durationDays: p.durationDays,
+        }))
+      );
+    }
+
+    // 2. Fallback to Prisma database
     const packages = await prisma.subscriptionPackage.findMany({
       where: { isActive: true },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],

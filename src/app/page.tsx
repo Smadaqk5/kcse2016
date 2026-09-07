@@ -8,6 +8,8 @@ import {
   Smartphone,
 } from "lucide-react";
 
+import { fetchPackagesFromFirestore } from "@/lib/firebase-db";
+
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
@@ -16,14 +18,23 @@ export default async function Home() {
   let monthlyPrice = 599;
 
   try {
-    const dbPlans = await prisma.subscriptionPackage.findMany({
-      where: { isActive: true },
-    });
-    dbPlans.forEach((p) => {
-      if (p.subscriptionType === "DAILY") dailyPrice = Number(p.amount);
-      if (p.subscriptionType === "WEEKLY") weeklyPrice = Number(p.amount);
-      if (p.subscriptionType === "MONTHLY") monthlyPrice = Number(p.amount);
-    });
+    const firestorePlans = await fetchPackagesFromFirestore().catch(() => []);
+    if (firestorePlans.length > 0) {
+      firestorePlans.forEach((p) => {
+        if (p.subscriptionType === "DAILY") dailyPrice = Number(p.amount);
+        if (p.subscriptionType === "WEEKLY") weeklyPrice = Number(p.amount);
+        if (p.subscriptionType === "MONTHLY") monthlyPrice = Number(p.amount);
+      });
+    } else {
+      const dbPlans = await prisma.subscriptionPackage.findMany({
+        where: { isActive: true },
+      });
+      dbPlans.forEach((p) => {
+        if (p.subscriptionType === "DAILY") dailyPrice = Number(p.amount);
+        if (p.subscriptionType === "WEEKLY") weeklyPrice = Number(p.amount);
+        if (p.subscriptionType === "MONTHLY") monthlyPrice = Number(p.amount);
+      });
+    }
   } catch {
     // Uses defaults
   }

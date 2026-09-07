@@ -4,20 +4,75 @@ import { canAccessPaper } from "@/lib/access";
 import { SinglePaperCheckout } from "@/components/papers/single-paper-checkout";
 import { ShieldCheck, Sparkles, BookOpen } from "lucide-react";
 import Link from "next/link";
+import { fetchPapersFromFirestore } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
+interface DisplayPaper {
+  id: string;
+  title: string;
+  description?: string | null;
+  contentType: string;
+  unitCode: string;
+  topic: string;
+  course: string;
+  semester: string;
+  price: number;
+  filePath: string;
+  isPublished: boolean;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
 export default async function PapersPage() {
   const session = await getCurrentSession();
-  let papers: Awaited<ReturnType<typeof prisma.paper.findMany>> = [];
+  let papers: DisplayPaper[] = [];
   let dbOffline = false;
 
   try {
-    papers = await prisma.paper.findMany({
-      where: { isPublished: true },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+    const [prismaPapers, firestorePapers] = await Promise.all([
+      prisma.paper
+        .findMany({
+          where: { isPublished: true },
+          orderBy: { createdAt: "desc" },
+          take: 100,
+        })
+        .catch(() => []),
+      fetchPapersFromFirestore().catch(() => []),
+    ]);
+
+    const map = new Map<string, DisplayPaper>();
+    for (const p of prismaPapers) {
+      map.set(p.id, {
+        ...p,
+        price: Number(p.price),
+        createdAt: new Date(p.createdAt),
+        updatedAt: new Date(p.updatedAt),
+      });
+    }
+    for (const fp of firestorePapers) {
+      if (fp.isPublished !== false) {
+        map.set(fp.id, {
+          id: fp.id,
+          title: fp.title,
+          description: fp.description,
+          contentType: fp.contentType,
+          unitCode: fp.unitCode,
+          topic: fp.topic,
+          course: fp.course,
+          semester: fp.semester,
+          price: Number(fp.price),
+          filePath: fp.filePath,
+          isPublished: fp.isPublished,
+          createdAt: fp.createdAt ? new Date(fp.createdAt) : new Date(),
+          updatedAt: fp.updatedAt ? new Date(fp.updatedAt) : new Date(),
+        });
+      }
+    }
+
+    papers = Array.from(map.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   } catch {
     dbOffline = true;
   }

@@ -42,6 +42,15 @@ interface PaperItem {
   isPublished: boolean;
 }
 
+function getAdminAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("kcse_admin_token");
+  if (token) {
+    return { Authorization: `Bearer ${token}` };
+  }
+  return {};
+}
+
 export function PricingManager() {
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [papers, setPapers] = useState<PaperItem[]>([]);
@@ -137,6 +146,9 @@ export function PricingManager() {
 
       const res = await fetch("/api/admin/papers", {
         method: "POST",
+        headers: {
+          ...getAdminAuthHeaders(),
+        },
         body: fd,
       });
 
@@ -170,7 +182,11 @@ export function PricingManager() {
 
   function refreshPricingData() {
     setLoading(true);
-    fetch("/api/admin/pricing")
+    fetch("/api/admin/pricing", {
+      headers: {
+        ...getAdminAuthHeaders(),
+      },
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
@@ -209,7 +225,11 @@ export function PricingManager() {
 
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/admin/pricing")
+    fetch("/api/admin/pricing", {
+      headers: {
+        ...getAdminAuthHeaders(),
+      },
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!isMounted || !data) return;
@@ -271,7 +291,10 @@ export function PricingManager() {
     try {
       const res = await fetch("/api/admin/pricing", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify({
           target: "PACKAGE",
           id: pkg.id,
@@ -309,7 +332,10 @@ export function PricingManager() {
     try {
       const res = await fetch("/api/admin/pricing", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify({
           target: "PAPER",
           id: paper.id,
@@ -350,7 +376,10 @@ export function PricingManager() {
 
       const res = await fetch("/api/admin/pricing", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify(payload),
       });
 

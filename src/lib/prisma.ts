@@ -395,7 +395,21 @@ function createMockPrisma(): PrismaClient {
         ) || null
       );
     },
-    findFirst: async () => mockStore.admins[0] || null,
+    findFirst: async ({ where }: { where?: Record<string, unknown> } = {}) => {
+      if (!where) return mockStore.admins[0] || null;
+      return (
+        mockStore.admins.find((a) => {
+          for (const [k, v] of Object.entries(where)) {
+            if (typeof v === "string" && typeof (a as unknown as Record<string, unknown>)[k] === "string") {
+              if ((a as unknown as Record<string, string>)[k].toLowerCase() !== v.toLowerCase()) return false;
+            } else if ((a as unknown as Record<string, unknown>)[k] !== v) {
+              return false;
+            }
+          }
+          return true;
+        }) || mockStore.admins[0] || null
+      );
+    },
     update: async ({ where, data }: { where: { id?: string; username?: string }; data: Record<string, unknown> }) => {
       const idx = mockStore.admins.findIndex(
         (a) => (where.id && a.id === where.id) || (where.username && a.username === where.username)

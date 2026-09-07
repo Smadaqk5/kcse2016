@@ -27,28 +27,51 @@ export async function POST(request: Request) {
     where: {
       username: username || "admin",
     },
-  });
+  }).catch(() => null);
 
-  if (!admin && isMasterPassword) {
-    // Also check if admin exists under 'admin'
-    admin = await prisma.adminUser.findFirst({
-      where: { username: "admin" },
-    });
+  if (!admin) {
+    // Try finding by case-insensitive or 'admin' or email
+    const allAdmins = await prisma.adminUser.findMany().catch(() => []);
+    admin = allAdmins.find(
+      (a) =>
+        a.username.toLowerCase() === username.toLowerCase() ||
+        (username.toLowerCase() === "mainaadam66@gmail.com" && a.username.toLowerCase() === "admin")
+    ) || null;
+  }
+
+  // Also check User table with role ADMIN if not found in AdminUser
+  let adminFromUserTable = null;
+  if (!admin) {
+    const candidateUser = await prisma.user.findFirst({
+      where: {
+        username: username || "admin",
+      },
+    }).catch(() => null);
+
+    if (candidateUser && candidateUser.role === "ADMIN") {
+      adminFromUserTable = candidateUser;
+    }
   }
 
   let isValid = isMasterPassword;
   if (!isValid && admin) {
-    isValid = await comparePassword(password, admin.passwordHash);
+    isValid = await comparePassword(password, admin.passwordHash).catch(() => false);
+  }
+  if (!isValid && adminFromUserTable) {
+    isValid = await comparePassword(password, adminFromUserTable.passwordHash).catch(() => false);
   }
 
   if (!isValid) {
     return NextResponse.json({ error: "Invalid admin password" }, { status: 401 });
   }
 
+  const effectiveId = admin?.id || adminFromUserTable?.id || "admin-master";
+  const effectiveUsername = admin?.username || adminFromUserTable?.username || username || "admin";
+
   await setAdminSession({
-    userId: admin?.id || "admin-master",
+    userId: effectiveId,
     role: "ADMIN",
-    username: admin?.username || username || "admin",
+    username: effectiveUsername,
   });
 
   return NextResponse.json({ ok: true, redirect: "/admin/dashboard" });

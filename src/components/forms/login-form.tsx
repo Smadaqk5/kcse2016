@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { KeyRound, ArrowRight, CheckCircle2, AlertCircle, ClipboardPaste, Lock } from "lucide-react";
 
 export function LoginForm() {
-  const router = useRouter();
-
   const [accessCode, setAccessCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,11 +39,14 @@ export function LoginForm() {
         return;
       }
 
-      setSuccess("Access verified! Opening your portal...");
+      setSuccess(
+        data.role === "ADMIN"
+          ? "Administrator verified! Opening Admin Dashboard..."
+          : "Access verified! Opening your portal..."
+      );
       setTimeout(() => {
-        router.push(data.redirect || "/dashboard");
-        router.refresh();
-      }, 500);
+        window.location.href = data.redirect || (data.role === "ADMIN" ? "/admin/dashboard" : "/dashboard");
+      }, 300);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);

@@ -15,8 +15,8 @@ export function middleware(request: NextRequest) {
   }
 
   if (protectedAdminRoutes.some((p) => path.startsWith(p))) {
-    if (!adminToken) {
-      return NextResponse.redirect(new URL("/login", request.url));
+    if (!adminToken && !userToken) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
     }
   }
 

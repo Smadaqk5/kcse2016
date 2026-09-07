@@ -1,21 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, Lock, ArrowRight, AlertCircle, ArrowLeft } from "lucide-react";
+import { ShieldCheck, Lock, ArrowRight, AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 
 export function AdminLoginForm() {
-  const router = useRouter();
-
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     if (!password) {
       setError("Please enter the administrator password.");
@@ -40,8 +39,10 @@ export function AdminLoginForm() {
         return;
       }
 
-      router.push(data.redirect || "/admin/dashboard");
-      router.refresh();
+      setSuccess("Authentication verified! Opening Admin Dashboard...");
+      setTimeout(() => {
+        window.location.href = data.redirect || "/admin/dashboard";
+      }, 250);
     } catch {
       setError("Network error. Please try again.");
       setLoading(false);
@@ -67,6 +68,13 @@ export function AdminLoginForm() {
         <div className="mb-4 p-3.5 rounded-xl border border-red-200 bg-red-50 text-xs text-red-800 font-medium flex items-center gap-2">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 p-3.5 rounded-xl border border-emerald-200 bg-emerald-50 text-xs text-emerald-800 font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{success}</span>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Smartphone,
@@ -31,16 +31,42 @@ export function StkForm({
   const router = useRouter();
 
   const defaultPackages: PackageOption[] = [
-    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY", amount: 1500, durationDays: 1 },
-    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 5000, durationDays: 7 },
-    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 12000, durationDays: 30 },
+    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY", amount: 49, durationDays: 1 },
+    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 199, durationDays: 7 },
+    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 599, durationDays: 30 },
   ];
 
-  const availablePackages = packages.length > 0 ? packages : defaultPackages;
+  const [fetchedPackages, setFetchedPackages] = useState<PackageOption[]>([]);
 
-  const [selectedPkg, setSelectedPkg] = useState<PackageOption>(
-    availablePackages.find((p) => p.subscriptionType === "WEEKLY") || availablePackages[0]
-  );
+  useEffect(() => {
+    if (!packages || packages.length === 0) {
+      fetch("/api/packages")
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data: PackageOption[]) => {
+          if (Array.isArray(data) && data.length > 0) {
+            setFetchedPackages(data);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [packages]);
+
+  const availablePackages =
+    packages && packages.length > 0
+      ? packages
+      : fetchedPackages.length > 0
+      ? fetchedPackages
+      : defaultPackages;
+
+  const [selectedPkgId, setSelectedPkgId] = useState<string | null>(null);
+
+  const selectedPkg = useMemo(() => {
+    if (selectedPkgId) {
+      const found = availablePackages.find((p) => p.id === selectedPkgId);
+      if (found) return found;
+    }
+    return availablePackages.find((p) => p.subscriptionType === "WEEKLY") || availablePackages[0];
+  }, [availablePackages, selectedPkgId]);
   const [phone, setPhone] = useState("07");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -249,7 +275,7 @@ export function StkForm({
                 <button
                   key={pkg.id}
                   type="button"
-                  onClick={() => setSelectedPkg(pkg)}
+                  onClick={() => setSelectedPkgId(pkg.id)}
                   className={`text-left p-3.5 rounded-xl border transition-all relative ${
                     isSelected
                       ? "border-emerald-700 bg-emerald-50/50 shadow-sm ring-1 ring-emerald-700"

@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function PricingPage() {
   const session = await getCurrentSession();
   const fallbackPlans = [
-    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY" as const, amount: 1500, durationDays: 1 },
-    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY" as const, amount: 5000, durationDays: 7 },
-    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY" as const, amount: 12000, durationDays: 30 },
+    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY" as const, amount: 49, durationDays: 1 },
+    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY" as const, amount: 199, durationDays: 7 },
+    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY" as const, amount: 599, durationDays: 30 },
   ];
   let plans = fallbackPlans;
 
@@ -21,28 +21,13 @@ export default async function PricingPage() {
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
     if (dbPlans.length > 0) {
-      plans = dbPlans.map((plan) => {
-        let amount = Number(plan.amount);
-        let durationDays = plan.durationDays;
-        // Auto-align default legacy prices if they were old defaults (< 1500)
-        if (plan.subscriptionType === "DAILY") {
-          if (amount < 1500) amount = 1500;
-          durationDays = 1;
-        } else if (plan.subscriptionType === "WEEKLY") {
-          if (amount < 5000) amount = 5000;
-          durationDays = 7;
-        } else if (plan.subscriptionType === "MONTHLY") {
-          if (amount < 12000) amount = 12000;
-          durationDays = 30;
-        }
-        return {
-          id: plan.id,
-          name: plan.name,
-          subscriptionType: plan.subscriptionType,
-          amount,
-          durationDays,
-        };
-      });
+      plans = dbPlans.map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        subscriptionType: plan.subscriptionType,
+        amount: Number(plan.amount),
+        durationDays: plan.durationDays,
+      }));
     }
   } catch {
     // Falls back to defaults

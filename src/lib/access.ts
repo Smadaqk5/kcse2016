@@ -2,9 +2,9 @@ import dayjs from "dayjs";
 import { prisma } from "@/lib/prisma";
 
 export const DEFAULT_SUBSCRIPTION_PRICES = {
-  DAILY: 1500,
-  WEEKLY: 5000,
-  MONTHLY: 12000,
+  DAILY: 49,
+  WEEKLY: 199,
+  MONTHLY: 599,
 } as const;
 
 export const SUBSCRIPTION_DURATIONS: Record<string, number> = {

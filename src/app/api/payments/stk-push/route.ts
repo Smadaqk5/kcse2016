@@ -20,12 +20,12 @@ export async function POST(req: NextRequest) {
 
     // Extract fields from either direct NestLink schema or app format
     const phone = String(rawBody.phone || rawBody.phoneNumber || "").trim();
-    const rawAmount = Number(rawBody.amount || 0);
+    let rawAmount = Number(rawBody.amount || 0);
 
-    if (!phone || isNaN(rawAmount) || rawAmount <= 0) {
+    if (!phone) {
       return NextResponse.json(
         {
-          error: "Invalid payload: 'phone' and a positive 'amount' are required.",
+          error: "Invalid payload: 'phone' is required.",
           received: { phone, amount: rawAmount },
         },
         { status: 400 }
@@ -103,10 +103,30 @@ export async function POST(req: NextRequest) {
       if (pkg) {
         durationDays = getSubscriptionDurationDays(pkg.subscriptionType, pkg.durationDays);
         subscriptionType = pkg.subscriptionType;
+        if (!rawAmount || rawAmount <= 0) {
+          rawAmount = Number(pkg.amount);
+        }
       } else if (typeStr && ["DAILY", "WEEKLY", "MONTHLY"].includes(typeStr)) {
         subscriptionType = typeStr;
         durationDays = getSubscriptionDurationDays(typeStr, 1);
       }
+    }
+
+    if (paperId && (!rawAmount || rawAmount <= 0)) {
+      const paper = await prisma.paper.findUnique({ where: { id: paperId } });
+      if (paper) {
+        rawAmount = Number(paper.price);
+      }
+    }
+
+    if (!rawAmount || isNaN(rawAmount) || rawAmount <= 0) {
+      return NextResponse.json(
+        {
+          error: "Invalid amount: A positive amount or valid package/paper is required.",
+          received: { phone, amount: rawAmount },
+        },
+        { status: 400 }
+      );
     }
 
     // Persist pending payment record in Supabase / Postgres database

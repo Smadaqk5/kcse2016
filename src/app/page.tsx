@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "@/lib/prisma";
 import {
   KeyRound,
   Lock,
@@ -7,7 +8,25 @@ import {
   Smartphone,
 } from "lucide-react";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  let dailyPrice = 49;
+  let weeklyPrice = 199;
+  let monthlyPrice = 599;
+
+  try {
+    const dbPlans = await prisma.subscriptionPackage.findMany({
+      where: { isActive: true },
+    });
+    dbPlans.forEach((p) => {
+      if (p.subscriptionType === "DAILY") dailyPrice = Number(p.amount);
+      if (p.subscriptionType === "WEEKLY") weeklyPrice = Number(p.amount);
+      if (p.subscriptionType === "MONTHLY") monthlyPrice = Number(p.amount);
+    });
+  } catch {
+    // Uses defaults
+  }
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Hero Section */}
@@ -89,7 +108,7 @@ export default function Home() {
                 <p className="text-xs text-slate-500 mt-0.5">Quick 24-hour cram session</p>
               </div>
               <div>
-                <span className="text-3xl font-extrabold text-slate-900">KES 49</span>
+                <span className="text-3xl font-extrabold text-slate-900">KES {dailyPrice}</span>
                 <span className="text-xs text-slate-500 ml-1">/ 1 day</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
@@ -126,7 +145,7 @@ export default function Home() {
                 <p className="text-xs text-slate-500 mt-0.5">Best for mock exam preparation</p>
               </div>
               <div>
-                <span className="text-3xl font-extrabold text-slate-900">KES 199</span>
+                <span className="text-3xl font-extrabold text-slate-900">KES {weeklyPrice}</span>
                 <span className="text-xs text-slate-500 ml-1">/ 7 days</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
@@ -160,7 +179,7 @@ export default function Home() {
                 <p className="text-xs text-slate-500 mt-0.5">Comprehensive revision until exams</p>
               </div>
               <div>
-                <span className="text-3xl font-extrabold text-slate-900">KES 599</span>
+                <span className="text-3xl font-extrabold text-slate-900">KES {monthlyPrice}</span>
                 <span className="text-xs text-slate-500 ml-1">/ 30 days</span>
               </div>
               <ul className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">

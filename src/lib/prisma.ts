@@ -3,13 +3,22 @@ import bcrypt from "bcryptjs";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const isPlaceholderDb =
-  !process.env.DATABASE_URL ||
-  process.env.DATABASE_URL.includes("YOUR_DB_PASSWORD") ||
-  process.env.DATABASE_URL.includes("YOUR_PROJECT_REF") ||
-  process.env.DATABASE_URL.includes("localhost:5432/placeholder");
+export function isPlaceholderDbUrl(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return true;
+  const trimmed = url.trim();
+  return (
+    !trimmed ||
+    trimmed.includes("YOUR_DB_PASSWORD") ||
+    trimmed.includes("YOUR_PROJECT_REF") ||
+    trimmed.includes("localhost:5432/placeholder") ||
+    trimmed.includes("[YOUR_PASSWORD]") ||
+    trimmed.includes("[PASSWORD]") ||
+    trimmed.includes("<PASSWORD>") ||
+    trimmed.includes("example.com")
+  );
+}
 
-const hasDbUrl = Boolean(process.env.DATABASE_URL && !isPlaceholderDb);
+const hasDbUrl = Boolean(process.env.DATABASE_URL && !isPlaceholderDbUrl(process.env.DATABASE_URL));
 
 // In-memory data store for fallback/preview when Postgres is offline
 interface MockUser {
@@ -354,6 +363,14 @@ function createMockPrisma(): PrismaClient {
       );
     },
     findMany: async () => [...mockStore.users],
+    count: async ({ where }: { where?: Record<string, unknown> } = {}) => {
+      if (!where) return mockStore.users.length;
+      return mockStore.users.filter((u) => {
+        if (where.role && u.role !== where.role) return false;
+        if (where.isActive !== undefined && u.isActive !== where.isActive) return false;
+        return true;
+      }).length;
+    },
     create: async ({ data }: { data: Record<string, unknown> }) => {
       const newUser: MockUser = {
         id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -383,6 +400,37 @@ function createMockPrisma(): PrismaClient {
       mockStore.users[idx] = updated;
       return updated;
     },
+    delete: async ({ where }: { where: { id?: string; username?: string } }) => {
+      const idx = mockStore.users.findIndex(
+        (u) => (where.id && u.id === where.id) || (where.username && u.username === where.username)
+      );
+      if (idx !== -1) {
+        const [deleted] = mockStore.users.splice(idx, 1);
+        return deleted;
+      }
+      return null;
+    },
+    upsert: async ({
+      where,
+      create,
+      update,
+    }: {
+      where: { id?: string; username?: string; phone?: string };
+      create: Record<string, unknown>;
+      update: Record<string, unknown>;
+    }) => {
+      const existing = mockStore.users.find(
+        (u) =>
+          (where.id && u.id === where.id) ||
+          (where.username && u.username === where.username) ||
+          (where.phone && u.phone === where.phone)
+      );
+      if (existing) {
+        Object.assign(existing, update, { updatedAt: new Date() });
+        return existing;
+      }
+      return userMethods.create({ data: create });
+    },
   };
 
   const adminMethods = {
@@ -410,6 +458,22 @@ function createMockPrisma(): PrismaClient {
         }) || mockStore.admins[0] || null
       );
     },
+    findMany: async () => [...mockStore.admins],
+    count: async () => mockStore.admins.length,
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      const admin: MockAdmin = {
+        id: `adm-${Date.now()}`,
+        username: String(data.username),
+        passwordHash: String(data.passwordHash),
+        fullName: String(data.fullName || "Administrator"),
+        twoFactorSecret: (data.twoFactorSecret as string) || null,
+        twoFactorEnabled: Boolean(data.twoFactorEnabled),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockStore.admins.push(admin);
+      return admin;
+    },
     update: async ({ where, data }: { where: { id?: string; username?: string }; data: Record<string, unknown> }) => {
       const idx = mockStore.admins.findIndex(
         (a) => (where.id && a.id === where.id) || (where.username && a.username === where.username)
@@ -422,6 +486,16 @@ function createMockPrisma(): PrismaClient {
       } as MockAdmin;
       mockStore.admins[idx] = updated;
       return updated;
+    },
+    delete: async ({ where }: { where: { id?: string; username?: string } }) => {
+      const idx = mockStore.admins.findIndex(
+        (a) => (where.id && a.id === where.id) || (where.username && a.username === where.username)
+      );
+      if (idx !== -1) {
+        const [deleted] = mockStore.admins.splice(idx, 1);
+        return deleted;
+      }
+      return null;
     },
   };
 
@@ -484,9 +558,38 @@ function createMockPrisma(): PrismaClient {
       return null;
     },
     count: async () => mockStore.packages.length,
+    upsert: async ({
+      where,
+      create,
+      update,
+    }: {
+      where: { id?: string; subscriptionType?: string };
+      create: Record<string, unknown>;
+      update: Record<string, unknown>;
+    }) => {
+      const existing = mockStore.packages.find(
+        (p) =>
+          (where.id && p.id === where.id) ||
+          (where.subscriptionType && p.subscriptionType === where.subscriptionType)
+      );
+      if (existing) {
+        Object.assign(existing, update, { updatedAt: new Date() });
+        return existing;
+      }
+      return packageMethods.create({ data: create });
+    },
   };
 
   const subscriptionMethods = {
+    findMany: async ({ where }: { where?: Record<string, unknown> } = {}) => {
+      let list = [...mockStore.subscriptions];
+      if (where?.userId) list = list.filter((s) => s.userId === where.userId);
+      if (where?.isActive !== undefined) list = list.filter((s) => s.isActive === where.isActive);
+      return list;
+    },
+    findUnique: async ({ where }: { where: { id: string } }) => {
+      return mockStore.subscriptions.find((s) => s.id === where.id) || null;
+    },
     findFirst: async ({ where }: { where?: Record<string, unknown> } = {}) => {
       const now = new Date();
       return (
@@ -512,6 +615,26 @@ function createMockPrisma(): PrismaClient {
       };
       mockStore.subscriptions.push(sub);
       return sub;
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => {
+      const idx = mockStore.subscriptions.findIndex((s) => s.id === where.id);
+      if (idx !== -1) {
+        mockStore.subscriptions[idx] = {
+          ...mockStore.subscriptions[idx],
+          ...data,
+          updatedAt: new Date(),
+        } as MockSubscription;
+        return mockStore.subscriptions[idx];
+      }
+      return null;
+    },
+    delete: async ({ where }: { where: { id: string } }) => {
+      const idx = mockStore.subscriptions.findIndex((s) => s.id === where.id);
+      if (idx !== -1) {
+        const [deleted] = mockStore.subscriptions.splice(idx, 1);
+        return deleted;
+      }
+      return null;
     },
     count: async () => mockStore.subscriptions.filter((s) => s.isActive && s.expiresAt > new Date()).length,
   };
@@ -638,6 +761,22 @@ function createMockPrisma(): PrismaClient {
         .reduce((acc, curr) => acc + curr.amount, 0);
       return { _sum: { amount: sum } };
     },
+    count: async ({ where }: { where?: Record<string, unknown> } = {}) => {
+      if (!where) return mockStore.payments.length;
+      return mockStore.payments.filter((p) => {
+        if (where.status && p.status !== where.status) return false;
+        if (where.userId && p.userId !== where.userId) return false;
+        return true;
+      }).length;
+    },
+    delete: async ({ where }: { where: { id: string } }) => {
+      const idx = mockStore.payments.findIndex((p) => p.id === where.id);
+      if (idx !== -1) {
+        const [deleted] = mockStore.payments.splice(idx, 1);
+        return deleted;
+      }
+      return null;
+    },
   };
 
   const purchaseMethods = {
@@ -658,6 +797,18 @@ function createMockPrisma(): PrismaClient {
           (p) => p.userId === where.userId_paperId!.userId && p.paperId === where.userId_paperId!.paperId
         ) || null
       );
+    },
+    create: async ({ data }: { data: Record<string, unknown> }) => {
+      const created: MockPaperPurchase = {
+        id: (data.id as string) || `pur-${Date.now()}`,
+        userId: String(data.userId),
+        paperId: String(data.paperId),
+        purchasedAt: (data.purchasedAt as Date) || new Date(),
+        expiresAt: (data.expiresAt as Date) || null,
+        paymentId: (data.paymentId as string) || null,
+      };
+      mockStore.purchases.push(created);
+      return created;
     },
     upsert: async ({
       where,
@@ -681,6 +832,28 @@ function createMockPrisma(): PrismaClient {
       mockStore.purchases.push(created);
       return created;
     },
+    delete: async ({ where }: { where: { id?: string; userId_paperId?: { userId: string; paperId: string } } }) => {
+      const idx = mockStore.purchases.findIndex(
+        (p) =>
+          (where.id && p.id === where.id) ||
+          (where.userId_paperId &&
+            p.userId === where.userId_paperId.userId &&
+            p.paperId === where.userId_paperId.paperId)
+      );
+      if (idx !== -1) {
+        const [deleted] = mockStore.purchases.splice(idx, 1);
+        return deleted;
+      }
+      return null;
+    },
+    count: async ({ where }: { where?: Record<string, unknown> } = {}) => {
+      if (!where) return mockStore.purchases.length;
+      return mockStore.purchases.filter((p) => {
+        if (where.userId && p.userId !== where.userId) return false;
+        if (where.paperId && p.paperId !== where.paperId) return false;
+        return true;
+      }).length;
+    },
   };
 
   const activityMethods = {
@@ -695,9 +868,15 @@ function createMockPrisma(): PrismaClient {
       mockStore.activityLogs.push(log);
       return log;
     },
+    findMany: async ({ take }: { take?: number } = {}) => {
+      let list = [...mockStore.activityLogs].reverse();
+      if (take) list = list.slice(0, take);
+      return list;
+    },
+    count: async () => mockStore.activityLogs.length,
   };
 
-  const models: Record<string, unknown> = {
+  const rawModels: Record<string, unknown> = {
     user: userMethods,
     adminUser: adminMethods,
     subscriptionPackage: packageMethods,
@@ -707,6 +886,27 @@ function createMockPrisma(): PrismaClient {
     paperPurchase: purchaseMethods,
     activityLog: activityMethods,
   };
+
+  // Wrap EACH model with a protective proxy to guarantee every Prisma method exists as a callable async function
+  const models: Record<string, unknown> = {};
+  for (const [name, targetObj] of Object.entries(rawModels)) {
+    models[name] = new Proxy(targetObj as object, {
+      get(target, propKey, receiver) {
+        if (Reflect.has(target, propKey)) {
+          return Reflect.get(target, propKey, receiver);
+        }
+        if (propKey === "count") return async () => 0;
+        if (propKey === "findMany") return async () => [];
+        if (propKey === "findFirst" || propKey === "findUnique") return async () => null;
+        if (propKey === "aggregate") return async () => ({ _sum: { amount: 0 }, _count: 0 });
+        if (propKey === "groupBy") return async () => [];
+        if (propKey === "delete" || propKey === "deleteMany") return async () => ({ count: 0 });
+        if (propKey === "updateMany") return async () => ({ count: 0 });
+        if (propKey === "upsert") return async () => null;
+        return async () => null;
+      },
+    });
+  }
 
   return new Proxy({} as PrismaClient, {
     get: (_target, prop) => {

@@ -257,6 +257,12 @@ ON CONFLICT ("username") DO NOTHING;
                 DATABASE_URL is provided, but could not complete query: {data.connectionError || "Check credentials"}.
                 Falling back safely to the in-memory store so the app remains active.
               </p>
+              <div className="flex flex-wrap gap-4 pt-1 text-slate-700 font-medium">
+                <span>Active Users: <b>{data?.stats?.users ?? 0}</b></span>
+                <span>Exam Papers: <b>{data?.stats?.papers ?? 0}</b></span>
+                <span>Packages: <b>{data?.stats?.packages ?? 0}</b></span>
+                <span>Active Subscriptions: <b>{data?.stats?.subscriptions ?? 0}</b></span>
+              </div>
             </div>
           </div>
         ) : (
@@ -265,8 +271,14 @@ ON CONFLICT ("username") DO NOTHING;
             <div className="space-y-1">
               <p className="font-bold text-sm text-slate-900">Supabase DB Ready to Connect</p>
               <p className="text-slate-600 leading-relaxed">
-                The app is currently running in local preview mode with full mock data. To link your live Supabase project, provide your <b>DATABASE_URL</b> in your environment variables.
+                The app is currently running in active preview mode with full mock data. To link your live Supabase project, provide your <b>DATABASE_URL</b> in your environment variables.
               </p>
+              <div className="flex flex-wrap gap-4 pt-1 text-slate-700 font-medium">
+                <span>Active Users: <b>{data?.stats?.users ?? 0}</b></span>
+                <span>Exam Papers: <b>{data?.stats?.papers ?? 0}</b></span>
+                <span>Packages: <b>{data?.stats?.packages ?? 0}</b></span>
+                <span>Active Subscriptions: <b>{data?.stats?.subscriptions ?? 0}</b></span>
+              </div>
             </div>
           </div>
         )}

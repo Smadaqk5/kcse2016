@@ -67,7 +67,15 @@ export function AdminTools() {
 
   async function uploadPaper(formData: FormData) {
     const res = await fetch("/api/admin/papers", { method: "POST", body: formData });
-    setStatus(res.ok ? "Paper uploaded." : "Paper upload failed.");
+    if (res.ok) {
+      setStatus("Paper uploaded and published successfully! Reloading...");
+      setTimeout(() => {
+        window.location.reload();
+      }, 600);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      setStatus(`Paper upload failed: ${err.error || "Please check required fields"}`);
+    }
   }
 
   async function createPackage(formData: FormData) {

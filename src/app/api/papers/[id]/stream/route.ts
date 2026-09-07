@@ -87,7 +87,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   let candidateId: string | null = session?.userId || null;
   let candidateUsername: string = session?.username || "Candidate";
 
-  if (!candidateId && phoneParam) {
+  if (session?.role === "ADMIN") {
+    candidateId = session.userId;
+    candidateUsername = "Administrator";
+  } else if (!candidateId && phoneParam) {
     const { allowed, user } = await canAccessPaperByPhone(phoneParam, id);
     if (allowed) {
       candidateId = user?.id || `guest-${phoneParam}`;
@@ -95,13 +98,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
   }
 
-  if (!candidateId) {
+  if (!candidateId && session?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized. Access or purchase required." }, { status: 401 });
   }
 
-  const access = candidateId.startsWith("guest-")
+  const access = session?.role === "ADMIN" || candidateId?.startsWith("guest-")
     ? true
-    : await canAccessPaper(candidateId, id);
+    : (candidateId ? await canAccessPaper(candidateId, id) : false);
 
   if (!access) return NextResponse.json({ error: "Payment required" }, { status: 402 });
 

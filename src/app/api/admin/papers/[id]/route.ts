@@ -1,7 +1,11 @@
+import fs from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+export const dynamic = "force-dynamic";
 
 const updatePaperSchema = z.object({
   title: z.string().min(2).optional(),
@@ -14,6 +18,17 @@ const updatePaperSchema = z.object({
   isPublished: z.boolean().optional(),
   contentType: z.enum(["PAST_PAPER", "REVISION_NOTE", "MOCK_EXAM"]).optional(),
 });
+
+function revalidatePublicPages() {
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/papers", "page");
+    revalidatePath("/pricing", "page");
+    revalidatePath("/admin/dashboard", "page");
+  } catch (err) {
+    console.error("[papers] revalidate error:", err);
+  }
+}
 
 export async function PUT(
   req: NextRequest,
@@ -50,6 +65,7 @@ export async function PUT(
       },
     });
 
+    revalidatePublicPages();
     return NextResponse.json(updated);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update paper";
@@ -68,10 +84,22 @@ export async function DELETE(
 
   const { id } = await params;
   try {
+    // Attempt to locate paper to delete its file from disk
+    const existing = await prisma.paper.findUnique({ where: { id } });
+    if (existing?.filePath) {
+      try {
+        await fs.unlink(existing.filePath);
+      } catch {
+        // file might not exist on disk
+      }
+    }
+
     await prisma.paper.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
+    revalidatePublicPages();
+    return NextResponse.json({ ok: true, deletedId: id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to delete paper";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+

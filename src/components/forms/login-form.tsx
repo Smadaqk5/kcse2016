@@ -73,9 +73,9 @@ export function LoginForm() {
         <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-0.5 rounded-full">
           Candidate Portal
         </span>
-        <h1 className="text-2xl font-extrabold text-slate-900 mt-2">Sign In with Access Code</h1>
+        <h1 className="text-2xl font-extrabold text-slate-900 mt-2">Sign In to Candidate Portal</h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Paste the unique code you were given during registration.
+          Enter your unique Access Code or M-Pesa phone number to access your account.
         </p>
       </div>
 
@@ -97,7 +97,7 @@ export function LoginForm() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Your Access Code
+              Access Code or Phone Number
             </label>
             <button
               type="button"
@@ -116,12 +116,12 @@ export function LoginForm() {
               autoFocus
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value)}
-              placeholder="e.g. KCSE-7842-9134"
-              className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base font-mono uppercase tracking-wider text-slate-900 placeholder:text-slate-400"
+              placeholder="e.g. KCSE-7842-9134 or 0712345678"
+              className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-base font-mono uppercase tracking-wider text-slate-900 placeholder:text-slate-400 placeholder:normal-case"
             />
           </div>
           <p className="text-[11px] text-slate-500 mt-1.5">
-            Tip: You can paste the code directly from your notes or saved messages.
+            Tip: You can use your unique Access Code or your M-Pesa phone number (e.g. 07... or 01...).
           </p>
         </div>
 

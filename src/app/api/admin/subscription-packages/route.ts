@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 import { subscriptionPackageSchema } from "@/lib/validators";
+import { revalidatePath } from "next/cache";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const session = requireSession(req);
@@ -38,6 +41,11 @@ export async function POST(req: NextRequest) {
         sortOrder: parsed.data.sortOrder ?? 0,
       },
     });
+    try {
+      revalidatePath("/", "layout");
+      revalidatePath("/pricing", "page");
+      revalidatePath("/admin/dashboard", "page");
+    } catch {}
     return NextResponse.json(created);
   } catch {
     return NextResponse.json(
@@ -46,3 +54,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 import { subscriptionPackageSchema } from "@/lib/validators";
+import { revalidatePath } from "next/cache";
+
+export const dynamic = "force-dynamic";
 
 export async function PUT(
   req: NextRequest,
@@ -31,6 +34,12 @@ export async function PUT(
     },
   });
 
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/pricing", "page");
+    revalidatePath("/admin/dashboard", "page");
+  } catch {}
+
   return NextResponse.json(updated);
 }
 
@@ -45,5 +54,13 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.subscriptionPackage.delete({ where: { id } });
+
+  try {
+    revalidatePath("/", "layout");
+    revalidatePath("/pricing", "page");
+    revalidatePath("/admin/dashboard", "page");
+  } catch {}
+
   return NextResponse.json({ ok: true });
 }
+

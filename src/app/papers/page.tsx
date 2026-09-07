@@ -4,7 +4,7 @@ import { canAccessPaper } from "@/lib/access";
 import { SinglePaperCheckout } from "@/components/papers/single-paper-checkout";
 import { ShieldCheck, Sparkles, BookOpen } from "lucide-react";
 import Link from "next/link";
-import { fetchPapersFromFirestore } from "@/lib/firebase-db";
+import { fetchPapersFromFirestore, fetchDeletedPaperIds } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ export default async function PapersPage() {
   let dbOffline = false;
 
   try {
-    const [prismaPapers, firestorePapers] = await Promise.all([
+    const [prismaPapers, firestorePapers, deletedSet] = await Promise.all([
       prisma.paper
         .findMany({
           where: { isPublished: true },
@@ -39,10 +39,12 @@ export default async function PapersPage() {
         })
         .catch(() => []),
       fetchPapersFromFirestore().catch(() => []),
+      fetchDeletedPaperIds().catch(() => new Set<string>()),
     ]);
 
     const map = new Map<string, DisplayPaper>();
     for (const p of prismaPapers) {
+      if (deletedSet.has(p.id)) continue;
       map.set(p.id, {
         ...p,
         price: Number(p.price),
@@ -51,6 +53,7 @@ export default async function PapersPage() {
       });
     }
     for (const fp of firestorePapers) {
+      if (deletedSet.has(fp.id)) continue;
       if (fp.isPublished !== false) {
         map.set(fp.id, {
           id: fp.id,
@@ -68,6 +71,11 @@ export default async function PapersPage() {
           updatedAt: fp.updatedAt ? new Date(fp.updatedAt) : new Date(),
         });
       }
+    }
+
+    // Explicitly prune any deleted papers
+    for (const delId of deletedSet) {
+      map.delete(delId);
     }
 
     papers = Array.from(map.values()).sort(

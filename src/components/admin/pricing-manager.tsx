@@ -76,6 +76,7 @@ export function PricingManager() {
 
   // PDF Management (Add & Delete) state
   const [deletingPaperId, setDeletingPaperId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showAddPaperModal, setShowAddPaperModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -88,16 +89,16 @@ export function PricingManager() {
   const [newFile, setNewFile] = useState<File | null>(null);
 
   async function handleDeletePaper(paper: PaperItem) {
-    if (!window.confirm(`Are you sure you want to delete "${paper.title}" (${paper.unitCode})? This action cannot be undone.`)) {
-      return;
-    }
-
     setDeletingPaperId(paper.id);
     setErrorMessage(null);
+    setConfirmDeleteId(null);
 
     try {
       const res = await fetch(`/api/admin/papers/${paper.id}`, {
         method: "DELETE",
+        headers: {
+          ...getAdminAuthHeaders(),
+        },
       });
 
       if (!res.ok) {
@@ -978,19 +979,46 @@ export function PricingManager() {
                           </button>
 
                           {/* Delete Paper Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePaper(paper)}
-                            disabled={deletingPaperId === paper.id}
-                            className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors disabled:opacity-50"
-                            title={`Delete ${paper.title}`}
-                          >
-                            {deletingPaperId === paper.id ? (
-                              <RefreshCw className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3.5 w-3.5" />
-                            )}
-                          </button>
+                          {confirmDeleteId === paper.id ? (
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePaper(paper)}
+                                disabled={deletingPaperId === paper.id}
+                                className="inline-flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs font-bold shadow-sm transition-colors"
+                                title="Click to permanently delete paper"
+                              >
+                                {deletingPaperId === paper.id ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3 w-3" />
+                                )}
+                                <span>Delete?</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="inline-flex items-center justify-center h-6 w-6 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-500 text-xs font-bold"
+                                title="Cancel"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteId(paper.id)}
+                              disabled={deletingPaperId === paper.id}
+                              className="inline-flex items-center justify-center h-7 w-7 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 transition-colors disabled:opacity-50"
+                              title={`Delete ${paper.title}`}
+                            >
+                              {deletingPaperId === paper.id ? (
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

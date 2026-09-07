@@ -36,6 +36,14 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    match /kcse_papers/{paperId} {
+      allow read, write, delete: if true;
+    }
+
+    match /deleted_papers/{paperId} {
+      allow read, write, delete: if true;
+    }
+
     // Users and candidates
     match /users/{userId} {
       allow read: if true;

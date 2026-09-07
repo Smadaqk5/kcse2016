@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 import { revalidatePath } from "next/cache";
-import { fetchPapersFromFirestore, savePaperToFirestore } from "@/lib/firebase-db";
+import { fetchPapersFromFirestore, fetchDeletedPaperIds, savePaperToFirestore } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
@@ -16,23 +16,30 @@ export async function GET(req: NextRequest) {
   }
 
   // Fetch from both prisma and Firestore
-  const [prismaPapers, firestorePapers] = await Promise.all([
+  const [prismaPapers, firestorePapers, deletedSet] = await Promise.all([
     prisma.paper.findMany({ orderBy: { createdAt: "desc" } }),
     fetchPapersFromFirestore().catch(() => []),
+    fetchDeletedPaperIds().catch(() => new Set<string>()),
   ]);
 
   // Merge so Firestore items take precedence or combine
   const map = new Map<string, Record<string, unknown>>();
   for (const p of prismaPapers) {
+    if (deletedSet.has(p.id)) continue;
     map.set(p.id, p as unknown as Record<string, unknown>);
   }
   for (const fp of firestorePapers) {
+    if (deletedSet.has(fp.id)) continue;
     map.set(fp.id, {
       ...map.get(fp.id),
       ...fp,
       createdAt: fp.createdAt ? new Date(fp.createdAt) : new Date(),
       updatedAt: fp.updatedAt ? new Date(fp.updatedAt) : new Date(),
     });
+  }
+
+  for (const delId of deletedSet) {
+    map.delete(delId);
   }
 
   const papers = Array.from(map.values()).sort(

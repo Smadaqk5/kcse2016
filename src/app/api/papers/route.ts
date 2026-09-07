@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { fetchPapersFromFirestore } from "@/lib/firebase-db";
+import { fetchPapersFromFirestore, fetchDeletedPaperIds } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const course = (searchParams.get("course") ?? "").toLowerCase();
   const semester = (searchParams.get("semester") ?? "").toLowerCase();
 
-  const [prismaPapers, firestorePapers] = await Promise.all([
+  const [prismaPapers, firestorePapers, deletedSet] = await Promise.all([
     prisma.paper
       .findMany({
         where: {
@@ -31,16 +31,19 @@ export async function GET(request: Request) {
       })
       .catch(() => []),
     fetchPapersFromFirestore().catch(() => []),
+    fetchDeletedPaperIds().catch(() => new Set<string>()),
   ]);
 
   const map = new Map<string, Record<string, unknown>>();
   for (const p of prismaPapers) {
+    if (deletedSet.has(p.id)) continue;
     map.set(p.id, {
       ...p,
       price: Number(p.price),
     });
   }
   for (const fp of firestorePapers) {
+    if (deletedSet.has(fp.id)) continue;
     if (fp.isPublished !== false) {
       map.set(fp.id, {
         id: fp.id,
@@ -54,6 +57,11 @@ export async function GET(request: Request) {
         createdAt: fp.createdAt ? new Date(fp.createdAt) : new Date(),
       });
     }
+  }
+
+  // Safety prune
+  for (const delId of deletedSet) {
+    map.delete(delId);
   }
 
   let list = Array.from(map.values()).sort(

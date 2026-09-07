@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 import { canAccessPaper, canAccessPaperByPhone } from "@/lib/access";
+import { fetchDeletedPaperIds } from "@/lib/firebase-db";
 
 function generateSamplePdf(title: string, unitCode: string, username: string): Buffer {
   const content = `BT
@@ -107,6 +108,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     : (candidateId ? await canAccessPaper(candidateId, id) : false);
 
   if (!access) return NextResponse.json({ error: "Payment required" }, { status: 402 });
+
+  const deletedSet = await fetchDeletedPaperIds().catch(() => new Set<string>());
+  if (deletedSet.has(id)) {
+    return NextResponse.json({ error: "Paper not found or has been removed." }, { status: 404 });
+  }
 
   const paper = await prisma.paper.findUnique({ where: { id } });
   if (!paper) return NextResponse.json({ error: "Not found" }, { status: 404 });

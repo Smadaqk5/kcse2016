@@ -71,12 +71,26 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["amount", "status", "phone"]
+    },
+    "DeletedPaper": {
+      "title": "DeletedPaper",
+      "description": "Tombstone record for deleted papers across dual database stores",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "deletedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id"]
     }
   },
   "firestore": {
     "/papers/{paperId}": {
       "schema": "Paper",
       "description": "KCSE Examination papers catalog"
+    },
+    "/deleted_papers/{paperId}": {
+      "schema": "DeletedPaper",
+      "description": "Registry of deleted papers"
     },
     "/packages/{packageId}": {
       "schema": "SubscriptionPackage",

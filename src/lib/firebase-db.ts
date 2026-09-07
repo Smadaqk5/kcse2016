@@ -158,21 +158,30 @@ export async function deletePackageFromFirestore(id: string): Promise<void> {
 }
 
 /**
- * Fetch all papers from Firestore
+ * Fetch all papers from Firestore (excluding any marked as deleted)
  */
 export async function fetchPapersFromFirestore(): Promise<FirestorePaper[]> {
   const db = getFirebaseDb();
   if (!db) return [];
 
   try {
-    const snap = await getDocs(collection(db, "papers"));
-    if (snap.empty) return [];
+    const [paperSnap, deletedSet] = await Promise.all([
+      getDocs(collection(db, "papers")),
+      fetchDeletedPaperIds().catch(() => new Set<string>()),
+    ]);
+
+    if (paperSnap.empty) return [];
 
     const papers: FirestorePaper[] = [];
-    snap.forEach((d) => {
+    paperSnap.forEach((d) => {
       const data = d.data();
+      const paperId = data.id || d.id;
+
+      // Skip if deleted tombstone exists
+      if (deletedSet.has(paperId)) return;
+
       papers.push({
-        id: data.id || d.id,
+        id: paperId,
         title: data.title || "KCSE Paper",
         description: data.description || null,
         contentType: data.contentType || "PAST_PAPER",
@@ -193,6 +202,26 @@ export async function fetchPapersFromFirestore(): Promise<FirestorePaper[]> {
   } catch (err) {
     console.warn("[Firestore] fetchPapers error:", err);
     return [];
+  }
+}
+
+/**
+ * Fetch set of all paper IDs that have been deleted
+ */
+export async function fetchDeletedPaperIds(): Promise<Set<string>> {
+  const db = getFirebaseDb();
+  if (!db) return new Set();
+
+  try {
+    const snap = await getDocs(collection(db, "deleted_papers"));
+    const set = new Set<string>();
+    snap.forEach((d) => {
+      set.add(d.id);
+    });
+    return set;
+  } catch (err) {
+    console.warn("[Firestore] fetchDeletedPaperIds notice:", err);
+    return new Set();
   }
 }
 
@@ -220,21 +249,33 @@ export async function savePaperToFirestore(paper: FirestorePaper): Promise<void>
   };
 
   try {
-    await setDoc(doc(db, "papers", paper.id), cleanData, { merge: true });
+    await Promise.allSettled([
+      setDoc(doc(db, "papers", paper.id), cleanData, { merge: true }),
+      // Remove from deleted_papers tombstone if it was re-added or edited
+      deleteDoc(doc(db, "deleted_papers", paper.id)),
+    ]);
   } catch (err) {
     console.error("[Firestore] savePaper error:", err);
   }
 }
 
 /**
- * Delete a paper from Firestore
+ * Delete a paper from Firestore completely and record tombstone
  */
 export async function deletePaperFromFirestore(id: string): Promise<void> {
   const db = getFirebaseDb();
   if (!db) return;
 
   try {
-    await deleteDoc(doc(db, "papers", id));
+    await Promise.allSettled([
+      deleteDoc(doc(db, "papers", id)),
+      deleteDoc(doc(db, "kcse_papers", id)),
+      setDoc(doc(db, "deleted_papers", id), {
+        id,
+        deletedAt: new Date().toISOString(),
+      }),
+    ]);
+    console.log(`[Firestore] Paper ${id} removed and added to deleted_papers registry.`);
   } catch (err) {
     console.error("[Firestore] deletePaper error:", err);
   }
@@ -259,11 +300,17 @@ export async function seedFirestoreIfEmpty(
       }
     }
 
-    const paperSnap = await getDocs(collection(db, "papers"));
+    const [paperSnap, deletedSet] = await Promise.all([
+      getDocs(collection(db, "papers")),
+      fetchDeletedPaperIds().catch(() => new Set<string>()),
+    ]);
+
     if (paperSnap.empty && defaultPapers.length > 0) {
       console.log("[Firestore] Seeding initial papers into Firestore database...");
       for (const pp of defaultPapers) {
-        await savePaperToFirestore(pp);
+        if (!deletedSet.has(pp.id)) {
+          await savePaperToFirestore(pp);
+        }
       }
     }
   } catch (err) {

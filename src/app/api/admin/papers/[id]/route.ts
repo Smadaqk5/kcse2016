@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/api-auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { deletePaperFromFirestore } from "@/lib/firebase-db";
 
 export const dynamic = "force-dynamic";
 
@@ -84,8 +85,8 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    // Attempt to locate paper to delete its file from disk
-    const existing = await prisma.paper.findUnique({ where: { id } });
+    // 1. Attempt to locate paper to delete its file from disk
+    const existing = await prisma.paper.findUnique({ where: { id } }).catch(() => null);
     if (existing?.filePath) {
       try {
         await fs.unlink(existing.filePath);
@@ -94,8 +95,19 @@ export async function DELETE(
       }
     }
 
-    await prisma.paper.delete({ where: { id } });
+    // 2. Delete paper from Firestore and register tombstone to ensure customer-facing side updates immediately
+    await deletePaperFromFirestore(id);
+
+    // 3. Delete from Prisma database if record exists (clear dependent records first)
+    await prisma.paperPurchase.deleteMany({ where: { paperId: id } }).catch(() => {});
+    await prisma.payment.updateMany({ where: { paperId: id }, data: { paperId: null } }).catch(() => {});
+    await prisma.paper.delete({ where: { id } }).catch((err) => {
+      console.warn(`[DELETE paper] Prisma delete notice for ${id}:`, err?.message || err);
+    });
+
+    // 4. Force revalidation of all public customer-facing pages
     revalidatePublicPages();
+
     return NextResponse.json({ ok: true, deletedId: id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to delete paper";

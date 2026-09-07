@@ -7,6 +7,7 @@ import {
   fetchPackagesFromFirestore,
   savePackageToFirestore,
   fetchPapersFromFirestore,
+  fetchDeletedPaperIds,
   savePaperToFirestore,
   seedFirestoreIfEmpty,
 } from "@/lib/firebase-db";
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [prismaPackages, prismaPapers, firestorePackages, firestorePapers] = await Promise.all([
+  const [prismaPackages, prismaPapers, firestorePackages, firestorePapers, deletedSet] = await Promise.all([
     prisma.subscriptionPackage.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     }),
@@ -65,6 +66,7 @@ export async function GET(req: NextRequest) {
     }),
     fetchPackagesFromFirestore().catch(() => []),
     fetchPapersFromFirestore().catch(() => []),
+    fetchDeletedPaperIds().catch(() => new Set<string>()),
   ]);
 
   // Merge packages: Firestore prices take priority if present
@@ -100,12 +102,14 @@ export async function GET(req: NextRequest) {
   // Merge papers
   const paperMap = new Map<string, Record<string, unknown>>();
   for (const p of prismaPapers) {
+    if (deletedSet.has(p.id)) continue;
     paperMap.set(p.id, {
       ...p,
       price: Number(p.price),
     });
   }
   for (const fp of firestorePapers) {
+    if (deletedSet.has(fp.id)) continue;
     const existing = paperMap.get(fp.id);
     if (existing) {
       existing.price = Number(fp.price);
@@ -125,6 +129,11 @@ export async function GET(req: NextRequest) {
         createdAt: fp.createdAt ? new Date(fp.createdAt) : new Date(),
       });
     }
+  }
+
+  // Safety prune
+  for (const delId of deletedSet) {
+    paperMap.delete(delId);
   }
 
   const papers = Array.from(paperMap.values()).sort(

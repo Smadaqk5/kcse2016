@@ -5,6 +5,7 @@ import {
   savePackageToFirestore,
   deletePackageFromFirestore,
   fetchPapersFromFirestore,
+  fetchDeletedPaperIds,
   savePaperToFirestore,
   deletePaperFromFirestore,
 } from "./firebase-db";
@@ -703,9 +704,18 @@ function createMockPrisma(): PrismaClient {
   const paperMethods = {
     findMany: async ({ where, take }: { where?: { isPublished?: boolean }; take?: number; orderBy?: unknown } = {}) => {
       try {
-        const fp = await fetchPapersFromFirestore();
+        const [fp, deletedIds] = await Promise.all([
+          fetchPapersFromFirestore().catch(() => []),
+          fetchDeletedPaperIds().catch(() => new Set<string>()),
+        ]);
+
+        if (deletedIds && deletedIds.size > 0) {
+          mockStore.papers = mockStore.papers.filter((p) => !deletedIds.has(p.id));
+        }
+
         if (fp && fp.length > 0) {
           for (const item of fp) {
+            if (deletedIds?.has(item.id)) continue;
             const found = mockStore.papers.find((p) => p.id === item.id);
             if (found) {
               found.price = Number(item.price);
@@ -740,6 +750,14 @@ function createMockPrisma(): PrismaClient {
       return list;
     },
     findUnique: async ({ where }: { where: { id: string } }) => {
+      try {
+        const deletedIds = await fetchDeletedPaperIds().catch(() => new Set<string>());
+        if (deletedIds?.has(where.id)) {
+          mockStore.papers = mockStore.papers.filter((p) => p.id !== where.id);
+          return null;
+        }
+      } catch {}
+
       const found = mockStore.papers.find((p) => p.id === where.id);
       if (found) return found;
       try {

@@ -149,56 +149,56 @@ export function AdminTools() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <form action={createUser} className="rounded-xl border bg-white p-4 space-y-2">
-        <h3 className="font-semibold">Create Subscriber Account</h3>
-        <input name="username" className="w-full rounded-md border px-3 py-2" placeholder="Username" required />
-        <input name="password" type="password" className="w-full rounded-md border px-3 py-2" placeholder="Password" required />
-        <input name="phone" className="w-full rounded-md border px-3 py-2" placeholder="07..., 01..., 2547..., 2541..., +2547..., +2541..." required />
-        <button className="rounded bg-slate-900 px-3 py-1.5 text-white">Create User</button>
+    <div className="grid gap-4 md:grid-cols-2 text-slate-100">
+      <form action={createUser} className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-3 shadow-md">
+        <h3 className="font-bold text-white text-base">Create Subscriber Account</h3>
+        <input name="username" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Username" required />
+        <input name="password" type="password" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Password" required />
+        <input name="phone" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="07..., 01..., 2547..." required />
+        <button className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition cursor-pointer">Create User</button>
       </form>
 
-      <form action={createPackage} className="rounded-xl border bg-white p-4 space-y-2">
-        <h3 className="font-semibold">Add Subscription Package</h3>
-        <input name="name" className="w-full rounded-md border px-3 py-2" placeholder="Package name" required />
-        <select name="subscriptionType" className="w-full rounded-md border px-3 py-2" required>
+      <form action={createPackage} className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-3 shadow-md">
+        <h3 className="font-bold text-white text-base">Add Subscription Package</h3>
+        <input name="name" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Package name" required />
+        <select name="subscriptionType" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white" required>
           <option value="DAILY">DAILY</option>
           <option value="WEEKLY">WEEKLY</option>
           <option value="MONTHLY">MONTHLY</option>
         </select>
-        <input name="amount" type="number" min={10} className="w-full rounded-md border px-3 py-2" placeholder="Amount (KES)" required />
-        <input name="durationDays" type="number" min={1} className="w-full rounded-md border px-3 py-2" placeholder="Duration days" required />
-        <input name="sortOrder" type="number" min={0} className="w-full rounded-md border px-3 py-2" placeholder="Sort order" defaultValue={0} required />
-        <label className="flex items-center gap-2 text-sm">
-          <input name="isActive" type="checkbox" defaultChecked /> Active package
+        <input name="amount" type="number" min={10} className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Amount (KES)" required />
+        <input name="durationDays" type="number" min={1} className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Duration days" required />
+        <input name="sortOrder" type="number" min={0} className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Sort order" defaultValue={0} required />
+        <label className="flex items-center gap-2 text-xs text-slate-300">
+          <input name="isActive" type="checkbox" defaultChecked className="rounded accent-emerald-600" /> Active package
         </label>
-        <button className="rounded bg-emerald-700 px-3 py-1.5 text-white">Add Package</button>
+        <button className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition cursor-pointer">Add Package</button>
       </form>
 
-      <form action={uploadPaper} className="rounded-xl border bg-white p-4 space-y-2">
-        <h3 className="font-semibold">Upload Paper PDF</h3>
-        <input name="title" className="w-full rounded-md border px-3 py-2" placeholder="Title" required />
-        <input name="unitCode" className="w-full rounded-md border px-3 py-2" placeholder="Unit code" required />
-        <input name="topic" className="w-full rounded-md border px-3 py-2" placeholder="Topic" required />
-        <input name="course" className="w-full rounded-md border px-3 py-2" placeholder="Course" required />
-        <input name="semester" className="w-full rounded-md border px-3 py-2" placeholder="Semester" required />
-        <input name="price" type="number" className="w-full rounded-md border px-3 py-2" placeholder="Price" required />
-        <select name="contentType" className="w-full rounded-md border px-3 py-2">
+      <form action={uploadPaper} className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-3 shadow-md">
+        <h3 className="font-bold text-white text-base">Upload Paper PDF</h3>
+        <input name="title" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Title" required />
+        <input name="unitCode" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Unit code (e.g. 121/1)" required />
+        <input name="topic" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Topic" required />
+        <input name="course" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Course / Subject" required />
+        <input name="semester" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Year / Term" required />
+        <input name="price" type="number" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Single Price (KES)" required />
+        <select name="contentType" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
           <option value="PAST_PAPER">Past Paper</option>
           <option value="REVISION_NOTE">Revision Note</option>
           <option value="MOCK_EXAM">Mock Exam</option>
         </select>
-        <input name="file" type="file" accept="application/pdf" className="w-full rounded-md border px-3 py-2" required />
-        <button className="rounded bg-emerald-700 px-3 py-1.5 text-white">Upload PDF</button>
+        <input name="file" type="file" accept="application/pdf" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm text-slate-300" required />
+        <button className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 text-xs font-bold text-white transition cursor-pointer">Upload PDF</button>
       </form>
 
-      <div className="rounded-xl border bg-white p-4 space-y-3 md:col-span-2">
-        <h3 className="font-semibold">Manage Subscription Packages</h3>
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5 space-y-4 md:col-span-2 shadow-md">
+        <h3 className="font-bold text-white text-base">Manage Subscription Packages</h3>
         {packages.map((pkg) => (
-          <div key={pkg.id} className="rounded border p-3 space-y-2">
-            <div className="grid gap-2 md:grid-cols-5">
+          <div key={pkg.id} className="rounded-xl border border-slate-800 bg-slate-950 p-3.5 space-y-3">
+            <div className="grid gap-2 sm:grid-cols-5">
               <input
-                className="rounded border px-2 py-1"
+                className="rounded-lg bg-slate-900 border border-slate-750 px-3 py-1.5 text-xs text-white"
                 value={pkg.name}
                 onChange={(e) =>
                   setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, name: e.target.value } : p)))
@@ -206,7 +206,7 @@ export function AdminTools() {
                 disabled={editingId !== pkg.id}
               />
               <select
-                className="rounded border px-2 py-1"
+                className="rounded-lg bg-slate-900 border border-slate-750 px-3 py-1.5 text-xs text-white"
                 value={pkg.subscriptionType}
                 onChange={(e) =>
                   setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, subscriptionType: e.target.value as SubscriptionType } : p)))
@@ -218,7 +218,7 @@ export function AdminTools() {
                 <option value="MONTHLY">MONTHLY</option>
               </select>
               <input
-                className="rounded border px-2 py-1"
+                className="rounded-lg bg-slate-900 border border-slate-750 px-3 py-1.5 text-xs text-white"
                 type="number"
                 value={pkg.amount}
                 onChange={(e) =>
@@ -227,7 +227,7 @@ export function AdminTools() {
                 disabled={editingId !== pkg.id}
               />
               <input
-                className="rounded border px-2 py-1"
+                className="rounded-lg bg-slate-900 border border-slate-750 px-3 py-1.5 text-xs text-white"
                 type="number"
                 value={pkg.durationDays}
                 onChange={(e) =>
@@ -235,7 +235,7 @@ export function AdminTools() {
                 }
                 disabled={editingId !== pkg.id}
               />
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-xs text-slate-300">
                 <input
                   type="checkbox"
                   checked={pkg.isActive}
@@ -243,6 +243,7 @@ export function AdminTools() {
                     setPackages((prev) => prev.map((p) => (p.id === pkg.id ? { ...p, isActive: e.target.checked } : p)))
                   }
                   disabled={editingId !== pkg.id}
+                  className="accent-emerald-600"
                 />
                 Active
               </label>
@@ -250,26 +251,26 @@ export function AdminTools() {
             <div className="flex gap-2">
               {editingId === pkg.id ? (
                 <>
-                  <button className="rounded bg-slate-900 px-3 py-1 text-white" onClick={() => void updatePackage(pkg)}>
+                  <button className="rounded-lg bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white cursor-pointer" onClick={() => void updatePackage(pkg)}>
                     Save
                   </button>
-                  <button className="rounded border px-3 py-1" onClick={() => setEditingId(null)}>
+                  <button className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:text-white cursor-pointer" onClick={() => setEditingId(null)}>
                     Cancel
                   </button>
                 </>
               ) : (
-                <button className="rounded border px-3 py-1" onClick={() => setEditingId(pkg.id)}>
+                <button className="rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs text-slate-200 cursor-pointer" onClick={() => setEditingId(pkg.id)}>
                   Edit
                 </button>
               )}
-              <button className="rounded bg-red-600 px-3 py-1 text-white" onClick={() => void deletePackage(pkg.id)}>
+              <button className="rounded-lg bg-rose-900 hover:bg-rose-800 text-rose-200 px-3 py-1.5 text-xs font-semibold cursor-pointer" onClick={() => void deletePackage(pkg.id)}>
                 Delete
               </button>
             </div>
           </div>
         ))}
       </div>
-      {status && <p className="md:col-span-2 text-sm text-slate-700">{status}</p>}
+      {status && <p className="md:col-span-2 text-xs font-semibold text-emerald-400 bg-slate-900 p-3 rounded-xl border border-slate-800">{status}</p>}
     </div>
   );
 }

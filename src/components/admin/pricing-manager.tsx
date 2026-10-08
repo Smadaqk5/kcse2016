@@ -416,21 +416,21 @@ export function PricingManager() {
   }, [papers, paperSearch]);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-6">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-md space-y-6 text-slate-100">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-950 border border-emerald-800 text-emerald-400">
             <Tag className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900">Price &amp; Tariff Management</h2>
-              <span className="rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5">
+              <h2 className="text-lg font-bold text-white">Price &amp; Tariff Management</h2>
+              <span className="rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold px-2 py-0.5">
                 Admin Control
               </span>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-400">
               Directly adjust subscription pass fees and individual exam paper prices. Changes sync immediately to M-Pesa STK push.
             </p>
           </div>
@@ -438,27 +438,27 @@ export function PricingManager() {
 
         <div className="flex items-center gap-2">
           {/* Tab Filter */}
-          <div className="flex rounded-lg border border-slate-200 bg-slate-50 p-1 text-xs font-semibold">
+          <div className="flex rounded-xl border border-slate-800 bg-slate-950 p-1 text-xs font-semibold">
             <button
               onClick={() => setActiveTab("ALL")}
-              className={`px-3 py-1 rounded-md transition-colors ${
-                activeTab === "ALL" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+                activeTab === "ALL" ? "bg-slate-800 text-white shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
               All Prices
             </button>
             <button
               onClick={() => setActiveTab("PACKAGES")}
-              className={`px-3 py-1 rounded-md transition-colors ${
-                activeTab === "PACKAGES" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+                activeTab === "PACKAGES" ? "bg-slate-800 text-white shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
               Subscriptions ({packages.length})
             </button>
             <button
               onClick={() => setActiveTab("PAPERS")}
-              className={`px-3 py-1 rounded-md transition-colors ${
-                activeTab === "PAPERS" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              className={`px-3 py-1 rounded-lg transition-colors cursor-pointer ${
+                activeTab === "PAPERS" ? "bg-slate-800 text-white shadow-sm" : "text-slate-400 hover:text-white"
               }`}
             >
               Papers ({papers.length})
@@ -469,7 +469,7 @@ export function PricingManager() {
             onClick={refreshPricingData}
             disabled={loading}
             title="Refresh prices"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -515,33 +515,33 @@ export function PricingManager() {
                   key={pkg.id}
                   className={`rounded-xl border p-4 transition-all relative ${
                     hasChanged
-                      ? "border-emerald-600 bg-emerald-50/20 shadow-sm"
-                      : "border-slate-200 bg-white"
+                      ? "border-emerald-500 bg-emerald-950/40 shadow-sm"
+                      : "border-slate-800 bg-slate-950"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <span className="inline-block rounded bg-slate-100 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-700">
+                      <span className="inline-block rounded bg-slate-900 border border-slate-800 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-400">
                         {pkg.subscriptionType}
                       </span>
-                      <h4 className="mt-1 font-bold text-sm text-slate-900">{pkg.name}</h4>
-                      <p className="text-[11px] text-slate-500">
+                      <h4 className="mt-1 font-bold text-sm text-white">{pkg.name}</h4>
+                      <p className="text-[11px] text-slate-400">
                         Duration: {pkg.durationDays} {pkg.durationDays === 1 ? "day" : "days"}
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Current</span>
-                      <span className="font-black text-slate-900 text-sm">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 block">Current</span>
+                      <span className="font-black text-emerald-400 text-sm">
                         KES {pkg.amount}
                       </span>
                     </div>
                   </div>
 
                   {/* Price input & action */}
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+                  <div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2">
                     <div className="relative flex-1">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
                         KES
                       </span>
                       <input
@@ -553,7 +553,7 @@ export function PricingManager() {
                           const val = Number(e.target.value);
                           setPackagePrices((prev) => ({ ...prev, [pkg.id]: val }));
                         }}
-                        className="w-full rounded-lg border border-slate-200 py-1.5 pl-11 pr-2 text-xs font-bold text-slate-900 focus:border-emerald-600 focus:outline-none"
+                        className="w-full rounded-lg bg-slate-900 border border-slate-700 py-1.5 pl-11 pr-2 text-xs font-bold text-white focus:border-emerald-500 focus:outline-none"
                       />
                     </div>
 

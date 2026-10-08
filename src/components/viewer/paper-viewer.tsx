@@ -56,17 +56,17 @@ export function PaperViewer({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs sm:text-sm text-amber-900">
-        <span>Protected KCSE Material. Watermarked for: <strong>{displayPhone}</strong></span>
-        <span className="text-amber-700">Screenshots & redistribution prohibited</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-900/60 bg-amber-950/40 px-4 py-2.5 text-xs sm:text-sm text-amber-200 shadow-sm">
+        <span>Protected KCSE Material. Watermarked for: <strong className="text-amber-100 font-mono">{displayPhone}</strong></span>
+        <span className="text-amber-400 font-semibold">Screenshots &amp; reproduction prohibited</span>
       </div>
-      <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-900">
-        <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center opacity-15 text-lg sm:text-2xl font-bold rotate-[-15deg] select-none text-white pointer-events-none">
+      <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+        <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center opacity-15 text-lg sm:text-2xl font-bold rotate-[-15deg] select-none text-emerald-400">
           {watermark}
         </div>
         <iframe
           src={streamSrc}
-          className={`h-[78vh] w-full border-0 bg-white ${hidden ? "blur-md" : ""}`}
+          className={`h-[75vh] sm:h-[82vh] w-full border-0 bg-white ${hidden ? "blur-md" : ""}`}
         />
       </div>
     </div>

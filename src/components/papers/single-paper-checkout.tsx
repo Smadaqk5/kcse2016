@@ -45,6 +45,7 @@ export function SinglePaperCheckout({ paper, hasAccess = false }: SinglePaperChe
       topic: paper.topic,
       price: Number(paper.price) || 250,
     });
+    openCart();
   };
   const [modalOpen, setModalOpen] = useState(false);
   const [phone, setPhone] = useState("07");

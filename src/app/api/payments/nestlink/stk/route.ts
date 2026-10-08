@@ -250,11 +250,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (updated.paperId) {
+    const meta = (payment.metadata as Record<string, unknown>) || {};
+    const paperIdsToGrant: string[] = Array.isArray(meta.paperIds) && meta.paperIds.length > 0
+      ? (meta.paperIds as string[])
+      : updated.paperId
+      ? [updated.paperId]
+      : [];
+
+    for (const pid of paperIdsToGrant) {
       await prisma.paperPurchase.upsert({
-        where: { userId_paperId: { userId: updated.userId, paperId: updated.paperId } },
+        where: { userId_paperId: { userId: updated.userId, paperId: pid } },
         update: { paymentId: updated.id },
-        create: { userId: updated.userId, paperId: updated.paperId, paymentId: updated.id },
+        create: { userId: updated.userId, paperId: pid, paymentId: updated.id },
       });
     }
   }

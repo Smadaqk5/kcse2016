@@ -61,11 +61,18 @@ export async function GET(
         });
       }
 
-      if (payment.paperId) {
+      const meta = (payment.metadata as Record<string, unknown>) || {};
+      const paperIdsToGrant: string[] = Array.isArray(meta.paperIds) && meta.paperIds.length > 0
+        ? (meta.paperIds as string[])
+        : payment.paperId
+        ? [payment.paperId]
+        : [];
+
+      for (const pid of paperIdsToGrant) {
         await prisma.paperPurchase.upsert({
-          where: { userId_paperId: { userId: payment.userId, paperId: payment.paperId } },
+          where: { userId_paperId: { userId: payment.userId, paperId: pid } },
           update: { paymentId: payment.id },
-          create: { userId: payment.userId, paperId: payment.paperId, paymentId: payment.id },
+          create: { userId: payment.userId, paperId: pid, paymentId: payment.id },
         });
       }
     } else if (remote.status === "FAILED") {

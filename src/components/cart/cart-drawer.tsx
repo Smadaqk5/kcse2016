@@ -398,6 +398,18 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <span>{loading ? "Processing..." : `Pay KES ${total} via M-Pesa`}</span>
                 </button>
 
+                {/* Direct Link to Dedicated Checkout Page */}
+                <div className="pt-1 text-center">
+                  <Link
+                    href="/checkout"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition"
+                  >
+                    <span>Open Dedicated Checkout Page</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+
                 {/* Simulate Button in Test Environments */}
                 {(isSimulated || process.env.NODE_ENV !== "production") && paymentId && !paymentComplete && (
                   <button

@@ -23,6 +23,7 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 const links = [
   { href: "/", label: "Home", icon: BookOpen },
   { href: "/papers", label: "Papers", icon: FileText },
+  { href: "/checkout", label: "Checkout", icon: ShoppingCart },
   { href: "/pricing", label: "Pricing", icon: DollarSign },
   { href: "/dashboard", label: "Dashboard", icon: User },
   { href: "/login", label: "Login", icon: KeyRound },

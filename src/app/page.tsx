@@ -7,6 +7,7 @@ import {
   Smartphone,
   ShieldCheck,
   BookOpen,
+  ShoppingCart,
 } from "lucide-react";
 
 import { fetchPackagesFromFirestore } from "@/lib/firebase-db";
@@ -78,6 +79,15 @@ export default async function Home() {
             >
               <BookOpen className="w-4 h-4 text-emerald-400" />
               <span>Browse All Papers</span>
+            </Link>
+
+            <Link
+              href="/checkout"
+              id="hero-checkout-btn"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-800/80 bg-emerald-950/40 px-5 py-3.5 text-sm font-bold text-emerald-300 hover:bg-emerald-900/50 hover:text-white transition-all active:scale-98"
+            >
+              <ShoppingCart className="w-4 h-4 text-emerald-400" />
+              <span>Cart &amp; Checkout</span>
             </Link>
 
             <Link

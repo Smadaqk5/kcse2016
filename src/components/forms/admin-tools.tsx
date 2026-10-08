@@ -184,8 +184,8 @@ export function AdminTools() {
         <input name="semester" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Year / Term" required />
         <input name="price" type="number" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500" placeholder="Single Price (KES)" required />
         <select name="contentType" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-sm text-white">
-          <option value="PAST_PAPER">Past Paper</option>
-          <option value="REVISION_NOTE">Revision Note</option>
+          <option value="PAST_PAPER">Exam Paper</option>
+          <option value="REVISION_NOTE">Study Guide</option>
           <option value="MOCK_EXAM">Mock Exam</option>
         </select>
         <input name="file" type="file" accept="application/pdf" className="w-full rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2 text-sm text-slate-300" required />

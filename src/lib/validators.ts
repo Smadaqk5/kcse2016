@@ -44,10 +44,11 @@ export const selfRegisterSchema = createUserSchema;
 export const stkSchema = z.object({
   amount: z.number().positive().optional(),
   phone: phoneField,
-  type: z.enum(["SUBSCRIPTION", "PAPER"]),
+  type: z.enum(["SUBSCRIPTION", "PAPER", "CART"]),
   subscriptionType: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional(),
   packageId: z.string().min(1).optional(),
   paperId: z.string().min(1).optional(),
+  paperIds: z.array(z.string().min(1)).optional(),
 });
 
 export const subscriptionPackageSchema = z.object({

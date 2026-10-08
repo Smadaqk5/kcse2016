@@ -53,12 +53,18 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Grant Paper purchase if paperId exists
-  if (updated.paperId) {
+  // Grant Paper purchase for single paper or entire cart
+  const paperIdsToGrant: string[] = Array.isArray(metadata.paperIds) && metadata.paperIds.length > 0
+    ? (metadata.paperIds as string[])
+    : updated.paperId
+    ? [updated.paperId]
+    : [];
+
+  for (const pid of paperIdsToGrant) {
     await prisma.paperPurchase.upsert({
-      where: { userId_paperId: { userId: updated.userId, paperId: updated.paperId } },
+      where: { userId_paperId: { userId: updated.userId, paperId: pid } },
       update: { paymentId: updated.id },
-      create: { userId: updated.userId, paperId: updated.paperId, paymentId: updated.id },
+      create: { userId: updated.userId, paperId: pid, paymentId: updated.id },
     });
   }
 

@@ -8,8 +8,11 @@ import {
   Filter,
   ArrowUpDown,
   RotateCcw,
+  ShoppingCart,
+  ArrowRight,
 } from "lucide-react";
 import { SinglePaperCheckout } from "@/components/papers/single-paper-checkout";
+import { useCart } from "@/lib/cart";
 
 export interface CatalogPaper {
   id: string;
@@ -39,6 +42,7 @@ export function PapersCatalog({
   accessMap,
   dbOffline = false,
 }: PapersCatalogProps) {
+  const { count: cartCount, total: cartTotal, openCart } = useCart();
   const [searchQuery, setSearchQuery] = useState(() => {
     if (typeof window !== "undefined") {
       try {
@@ -302,7 +306,7 @@ export function PapersCatalog({
       {/* Offline Alert */}
       {dbOffline && (
         <div className="rounded-xl border border-amber-500/40 bg-amber-950/40 p-4 text-amber-200 text-sm">
-          Database is temporarily unreachable. Past papers will be loaded once the connection recovers.
+          Database is temporarily unreachable. Examination papers will be loaded once the connection recovers.
         </div>
       )}
 
@@ -415,11 +419,41 @@ export function PapersCatalog({
             <BookOpen className="w-10 h-10 mx-auto text-emerald-500 mb-2" />
             <p className="font-medium text-white">No examination papers available yet.</p>
             <p className="text-xs text-slate-400 mt-1">
-              Please check back shortly as the controller uploads revision papers.
+              Please check back shortly as the controller uploads examination papers.
             </p>
           </div>
         )}
       </div>
+
+      {/* Sticky Cart Floating Bar for Guest Students */}
+      {cartCount > 0 && (
+        <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100vw-2rem)] max-w-lg animate-in slide-in-from-bottom-4 duration-200">
+          <div className="rounded-2xl bg-slate-900/98 border border-emerald-500/80 p-3 sm:p-4 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 text-white ring-1 ring-emerald-500/40">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-10 w-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                <ShoppingCart className="h-5 w-5" />
+              </div>
+              <div className="truncate">
+                <span className="text-xs font-bold text-emerald-400 block">
+                  {cartCount === 1 ? "1 Paper in Cart" : `${cartCount} Papers in Cart`}
+                </span>
+                <span className="text-sm sm:text-base font-black text-white">
+                  Total: KES {cartTotal}
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={openCart}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2.5 text-xs sm:text-sm shadow-md shadow-emerald-950 transition active:scale-95 cursor-pointer shrink-0"
+            >
+              <span>View Cart &amp; Checkout</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

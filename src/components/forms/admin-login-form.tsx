@@ -66,7 +66,7 @@ export function AdminLoginForm() {
         </span>
         <h1 className="text-2xl font-black text-white mt-2">Admin Portal Sign In</h1>
         <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          Manage revision materials, candidate access codes, and payments.
+          Manage examination materials, candidate access codes, and payments.
         </p>
       </div>
 

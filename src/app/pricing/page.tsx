@@ -55,10 +55,10 @@ export default async function PricingPage() {
             Instant M-Pesa Express Activation
           </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-            KCSE Revision Subscription Plans
+            KCSE Subscription Access Plans
           </h1>
           <p className="text-slate-400 text-sm sm:text-base">
-            Gain immediate, unrestricted, view-only access to all verified KCSE past papers, marking schemes, and predicted national mocks.
+            Gain immediate, unrestricted, view-only access to all verified KCSE examination papers, marking schemes, and predicted national mocks.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default async function PricingPage() {
                     <h2 className="text-xl font-bold text-white">{plan.name}</h2>
                     <p className="text-xs text-slate-400 mt-1">
                       {plan.durationDays === 1
-                        ? "Ideal for quick evening revision"
+                        ? "Ideal for quick evening study"
                         : plan.durationDays === 7
                         ? "Best value for mock exam season"
                         : "Complete syllabus mastery pass"}

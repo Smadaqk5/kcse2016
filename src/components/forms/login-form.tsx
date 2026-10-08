@@ -147,7 +147,7 @@ export function LoginForm() {
               <span>Verifying Access Code...</span>
             ) : (
               <>
-                <span>Enter Revision Portal</span>
+                <span>Access Exam Portal</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

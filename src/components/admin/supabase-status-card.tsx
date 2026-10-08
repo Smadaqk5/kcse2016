@@ -57,7 +57,7 @@ export function SupabaseStatusCard() {
   }, []);
 
   async function handleCopySql() {
-    const sqlScript = `-- KCSE Revision Portal - Supabase PostgreSQL Schema Script
+    const sqlScript = `-- KCSE Exam Portal - Supabase PostgreSQL Schema Script
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 DO $$ BEGIN

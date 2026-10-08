@@ -217,7 +217,7 @@ export function RegisterForm() {
             className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-base sm:text-sm font-mono transition"
           />
           <p className="text-[11px] text-slate-400 mt-1">
-            Used for receiving M-Pesa STK prompts when unlocking revision papers.
+            Used for receiving M-Pesa STK prompts when unlocking examination papers.
           </p>
         </div>
 

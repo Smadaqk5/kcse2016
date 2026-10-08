@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     username: user.username,
     phone: user.phone,
     accessCode: user.twoFactorSecret,
-    message: "Access granted! Enjoy your KCSE revision materials.",
+    message: "Access granted! Enjoy your KCSE exam materials.",
   });
 
   response.cookies.set("kcse_session", token, {

@@ -125,24 +125,37 @@ export async function POST(req: NextRequest) {
     paymentAmount = resolvedAmount;
     durationDays = resolvedDurationDays;
     subscriptionType = resolvedSubType || "DAILY";
-  } else if (parsed.data.type === "PAPER" && parsed.data.paperId) {
+  } else if ((parsed.data.type === "PAPER" || parsed.data.type === "CART") && (parsed.data.paperId || (parsed.data.paperIds && parsed.data.paperIds.length > 0))) {
     const firestorePapers = await fetchPapersFromFirestore().catch(() => []);
-    const fp = firestorePapers.find((p) => p.id === parsed.data.paperId);
-    if (fp) {
-      paymentAmount = Number(fp.price);
-    } else {
-      const paper = await prisma.paper.findUnique({
-        where: { id: parsed.data.paperId },
-      });
-      if (paper) {
-        paymentAmount = Number(paper.price);
+    const targetPaperIds = parsed.data.paperIds && parsed.data.paperIds.length > 0
+      ? parsed.data.paperIds
+      : parsed.data.paperId ? [parsed.data.paperId] : [];
+
+    let calculatedSum = 0;
+    for (const pid of targetPaperIds) {
+      const fp = firestorePapers.find((p) => p.id === pid);
+      if (fp) {
+        calculatedSum += Number(fp.price);
+      } else {
+        const paper = await prisma.paper.findUnique({
+          where: { id: pid },
+        });
+        if (paper) {
+          calculatedSum += Number(paper.price);
+        }
       }
     }
+    paymentAmount = calculatedSum > 0 ? calculatedSum : (parsed.data.amount || 250);
   }
 
   if (!paymentAmount || paymentAmount <= 0) {
     return NextResponse.json({ error: "Invalid payment amount." }, { status: 400 });
   }
+
+  const primaryPaperId = parsed.data.paperId || (parsed.data.paperIds && parsed.data.paperIds[0]) || null;
+  const allPaperIds = parsed.data.paperIds && parsed.data.paperIds.length > 0
+    ? parsed.data.paperIds
+    : parsed.data.paperId ? [parsed.data.paperId] : [];
 
   // Create payment record
   const payment = await prisma.payment.create({
@@ -150,7 +163,7 @@ export async function POST(req: NextRequest) {
       userId,
       amount: paymentAmount,
       phone: parsed.data.phone,
-      paperId: parsed.data.paperId,
+      paperId: primaryPaperId,
       subscriptionType,
       metadata: {
         provider: "NESTLINK",
@@ -158,6 +171,7 @@ export async function POST(req: NextRequest) {
         requestedBy: candidateUsername || parsed.data.phone,
         durationDays,
         isGuestPurchase: !session,
+        paperIds: allPaperIds,
       },
     },
   });
@@ -169,11 +183,17 @@ export async function POST(req: NextRequest) {
       amount: paymentAmount,
       phone: parsed.data.phone,
       accountReference: `KCSE-${(candidateUsername || parsed.data.phone).slice(-8).toUpperCase()}`,
-      description: parsed.data.type === "SUBSCRIPTION" ? `KCSE ${subscriptionType} Access` : "KCSE Paper Purchase",
+      description:
+        parsed.data.type === "SUBSCRIPTION"
+          ? `KCSE ${subscriptionType} Access`
+          : parsed.data.type === "CART"
+          ? `KCSE Cart (${allPaperIds.length} Papers)`
+          : "KCSE Paper Purchase",
       metadata: {
         paymentId: payment.id,
         userId,
-        paperId: parsed.data.paperId,
+        paperId: primaryPaperId,
+        paperIds: allPaperIds,
       },
     });
   } catch (err: unknown) {

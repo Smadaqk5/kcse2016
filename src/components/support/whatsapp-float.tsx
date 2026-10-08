@@ -95,21 +95,19 @@ export function WhatsAppFloat() {
         </div>
       )}
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Small Logo Only */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative flex items-center gap-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 shadow-xl shadow-emerald-950 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
-        aria-label="Open WhatsApp Support"
+        className="group relative flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-950 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
+        aria-label="WhatsApp Support"
+        title="WhatsApp Support"
       >
-        <span className="relative flex h-3 w-3">
+        <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-white" />
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
         </span>
-        <MessageCircle className="h-5 w-5 fill-white/20" />
-        <span className="text-xs sm:text-sm font-bold tracking-wide">
-          WhatsApp Support
-        </span>
+        <MessageCircle className="h-6 w-6 fill-white/20" />
       </button>
     </div>
   );

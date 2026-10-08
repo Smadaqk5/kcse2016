@@ -265,7 +265,7 @@ export function StkForm({
       {!isWaitingPrompt ? (
         <div className="mt-5 space-y-4">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-            Select Revision Package
+            Select Access Package
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {availablePackages.map((pkg) => {

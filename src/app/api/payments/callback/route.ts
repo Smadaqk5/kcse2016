@@ -136,12 +136,18 @@ export async function POST(req: Request) {
     });
   }
 
-  // Unlock single paper if applicable
-  if (updated.paperId) {
+  // Unlock single paper or all cart papers
+  const paperIdsToGrant: string[] = Array.isArray(existingMeta.paperIds) && existingMeta.paperIds.length > 0
+    ? (existingMeta.paperIds as string[])
+    : updated.paperId
+    ? [updated.paperId]
+    : [];
+
+  for (const pid of paperIdsToGrant) {
     await prisma.paperPurchase.upsert({
-      where: { userId_paperId: { userId: updated.userId, paperId: updated.paperId } },
+      where: { userId_paperId: { userId: updated.userId, paperId: pid } },
       update: { paymentId: updated.id },
-      create: { userId: updated.userId, paperId: updated.paperId, paymentId: updated.id },
+      create: { userId: updated.userId, paperId: pid, paymentId: updated.id },
     });
   }
 

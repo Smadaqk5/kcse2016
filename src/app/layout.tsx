@@ -17,10 +17,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Past Papers Hub - KCSE Exam Papers",
+  title: "KCSE Exam Portal - Official Exam Papers",
   description: "Secure VIP exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
   openGraph: {
-    title: "Past Papers Hub - KCSE Exam Papers",
+    title: "KCSE Exam Portal - Official Exam Papers",
     description: "Secure VIP exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
   },
 };

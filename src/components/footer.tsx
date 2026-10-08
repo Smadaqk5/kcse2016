@@ -7,9 +7,9 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b border-slate-850">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-center sm:text-left">
-            <span className="font-bold text-white text-sm">Past Papers Hub • KCSE 2026</span>
+            <span className="font-bold text-white text-sm">KCSE Exam Portal • 2026</span>
             <span className="text-slate-600 hidden sm:inline">|</span>
-            <span className="text-slate-400">Verified Exam Revision Portal</span>
+            <span className="text-slate-400">Verified Examination Portal</span>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs">
@@ -63,7 +63,7 @@ export function Footer() {
         </div>
 
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-slate-500 text-[11px] text-center sm:text-left">
-          <p>© {new Date().getFullYear()} Past Papers Hub. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} KCSE Exam Portal. All rights reserved.</p>
           <p className="text-slate-500">
             Protected view-only digital examination materials.
           </p>

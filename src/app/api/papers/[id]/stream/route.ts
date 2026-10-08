@@ -15,7 +15,7 @@ function generateSamplePdf(title: string, unitCode: string, username: string): B
 (${title.replace(/[()]/g, "")} [${unitCode}]) Tj
 0 -22 Td
 /F1 10 Tf
-(CONFIDENTIAL REVISION MATERIAL - WATERMARKED FOR CANDIDATE: ${username.toUpperCase()}) Tj
+(CONFIDENTIAL EXAMINATION MATERIAL - WATERMARKED FOR CANDIDATE: ${username.toUpperCase()}) Tj
 0 -36 Td
 /F1 12 Tf
 (SECTION A: Answer ALL questions in this section.) Tj

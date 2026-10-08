@@ -122,10 +122,10 @@ export default async function PapersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            Examination Papers &amp; Revision Series
+            Examination Papers &amp; Mock Series
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Access authentic KCSE past examinations, confidential marking schemes, and predicted trial papers.
+            Access authentic KCSE national examinations, confidential marking schemes, and predicted trial papers.
           </p>
         </div>
 
@@ -148,10 +148,10 @@ export default async function PapersPage() {
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-bold text-white">
-              Direct Guest Checkout Available
+              Direct Guest Checkout &amp; Cart Available
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-              No account or registration required. You can purchase single papers on the spot using Safaricom M-Pesa.
+              No account or registration required. Add multiple papers to your cart or buy on the spot using Safaricom M-Pesa.
             </p>
           </div>
         </div>

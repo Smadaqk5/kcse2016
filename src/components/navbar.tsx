@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -17,6 +17,8 @@ import {
   PhoneCall,
   User,
 } from "lucide-react";
+import { useCart } from "@/lib/cart";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 const links = [
   { href: "/", label: "Home", icon: BookOpen },
@@ -35,17 +37,13 @@ export function Navbar() {
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [quickSearchOpen, setQuickSearchOpen] = useState(false);
   const [quickSearchQuery, setQuickSearchQuery] = useState("");
-  const [cartCount] = useState<number>(() => {
-    if (typeof window === "undefined") return 0;
-    try {
-      const stored = localStorage.getItem("kcse_cart");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed.length;
-      }
-    } catch {}
-    return 0;
-  });
+  const { count: cartCount } = useCart();
+
+  useEffect(() => {
+    const handleOpenCart = () => setCartDrawerOpen(true);
+    window.addEventListener("kcse_cart_open", handleOpenCart);
+    return () => window.removeEventListener("kcse_cart_open", handleOpenCart);
+  }, []);
 
   const closeAllMenus = () => {
     setMobileMenuOpen(false);
@@ -82,7 +80,7 @@ export function Navbar() {
               </div>
               <div className="flex flex-col">
                 <span className="leading-tight font-extrabold text-white group-hover:text-emerald-300">
-                  Past Papers Hub
+                  KCSE Exam Portal
                 </span>
                 <span className="text-[10px] text-emerald-400 font-medium tracking-wide">
                   KCSE 2026 VIP
@@ -92,7 +90,7 @@ export function Navbar() {
 
             <span className="hidden md:inline-flex items-center gap-1 rounded-full bg-emerald-950/80 border border-emerald-800/60 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-300">
               <ShieldCheck className="w-3 h-3 text-emerald-400" />
-              Verified Revision
+              Verified Materials
             </span>
           </div>
 
@@ -152,16 +150,16 @@ export function Navbar() {
               </span>
             </button>
 
-            {/* WhatsApp Quick Button (Desktop & Tablet) */}
+            {/* WhatsApp Quick Button (Desktop & Tablet) - Logo only */}
             <a
               href="https://wa.me/14144015805?text=Hello%20KCSE%20Support%2C%20I%20need%20assistance"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 hover:border-emerald-500 px-3 py-2 text-xs font-bold text-emerald-300 hover:text-white transition shadow-sm"
+              className="inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 hover:border-emerald-500 text-emerald-400 hover:text-white transition active:scale-95 shadow-sm cursor-pointer"
               title="WhatsApp Support (+14144015805)"
+              aria-label="WhatsApp Support"
             >
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-              <span>WhatsApp Help</span>
+              <MessageCircle className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </a>
 
             {/* The Three Bar (Hamburger Menu Button) */}
@@ -217,58 +215,11 @@ export function Navbar() {
           </div>
         )}
 
-        {/* Cart / Saved Drawer Modal */}
-        {cartDrawerOpen && (
-          <div className="fixed inset-0 z-[9990] flex justify-end bg-black/60 backdrop-blur-xs">
-            <div className="h-full w-full max-w-sm bg-slate-900 border-l border-slate-800 p-5 flex flex-col justify-between shadow-2xl text-slate-100 animate-in slide-in-from-right duration-200">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5 text-emerald-400" />
-                    <h3 className="font-bold text-base text-white">Your Saved Papers</h3>
-                  </div>
-                  <button
-                    onClick={() => setCartDrawerOpen(false)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="rounded-xl bg-slate-950 border border-slate-800/80 p-4 text-center space-y-2">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-slate-400">
-                    <BookOpen className="h-6 w-6 text-emerald-500" />
-                  </div>
-                  <p className="text-sm font-semibold text-white">
-                    {cartCount === 0 ? "No papers in cart yet" : `${cartCount} papers in session`}
-                  </p>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    You can browse the full KCSE catalog and purchase individual papers or get an unlimited VIP pass.
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 pt-4 border-t border-slate-800">
-                <Link
-                  href="/papers"
-                  onClick={closeAllMenus}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 text-sm transition"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Browse Exam Papers</span>
-                </Link>
-                <Link
-                  href="/pricing"
-                  onClick={closeAllMenus}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 text-xs transition"
-                >
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
-                  <span>View All VIP Subscription Plans</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Cart Drawer for Guest Students */}
+        <CartDrawer
+          isOpen={cartDrawerOpen}
+          onClose={() => setCartDrawerOpen(false)}
+        />
 
         {/* Mobile Dropdown Menu (Opened by the Three Bar Hamburger Button) */}
         {mobileMenuOpen && (

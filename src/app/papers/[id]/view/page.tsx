@@ -82,7 +82,7 @@ export default async function PaperViewPage({
           <div className="space-y-2">
             <h2 className="text-xl font-bold text-white">Single Paper Access Required</h2>
             <p className="text-sm text-slate-400 leading-relaxed">
-              This confidential revision material is protected. You can purchase access to this single paper directly without creating an account or signing up.
+              This confidential examination material is protected. You can purchase access to this single paper directly without creating an account or signing up.
             </p>
           </div>
 

@@ -54,11 +54,11 @@ export default async function Home() {
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
             <span>VIP KCSE 2026 </span>
-            <span className="text-emerald-400">Past Papers Hub</span>
+            <span className="text-emerald-400">Exam Portal</span>
           </h1>
 
           <p className="mx-auto max-w-2xl text-sm sm:text-lg text-slate-300 leading-relaxed">
-            Immediate view-only access to official KCSE examination papers and complete KNEC marking schemes. Log in with your candidate access code and unlock revision materials instantly via M-Pesa.
+            Immediate view-only access to official KCSE examination papers and complete KNEC marking schemes. Log in with your candidate access code and unlock exam materials instantly via M-Pesa.
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -115,10 +115,10 @@ export default async function Home() {
             Subscription Tiers
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-white">
-            Flexible Revision Plans via M-Pesa
+            Flexible Access Plans via M-Pesa
           </h2>
           <p className="text-slate-400 text-sm max-w-xl mx-auto">
-            Choose a plan tailored to your revision timeline. Instant automated activation straight to your mobile phone.
+            Choose a plan tailored to your study timeline. Instant automated activation straight to your mobile phone.
           </p>
         </div>
 
@@ -199,7 +199,7 @@ export default async function Home() {
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Monthly VIP</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Comprehensive revision until exams</p>
+                <p className="text-xs text-slate-400 mt-0.5">Comprehensive study until exams</p>
               </div>
               <div>
                 <span className="text-3xl font-extrabold text-white">KES {monthlyPrice}</span>
@@ -235,7 +235,7 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl space-y-12">
           <div className="text-center space-y-3">
             <h2 className="text-2xl sm:text-3xl font-black text-white">
-              How the Revision Platform Works
+              How the Examination Platform Works
             </h2>
             <p className="text-slate-400 text-sm max-w-xl mx-auto">
               Ultra-simple candidate access code login paired with fast M-Pesa mobile transactions.
@@ -277,7 +277,7 @@ export default async function Home() {
               <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-400 flex items-center justify-center font-bold text-sm">
                 4
               </div>
-              <h3 className="font-bold text-base text-white">Revise &amp; Excel</h3>
+              <h3 className="font-bold text-base text-white">Study &amp; Excel</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Study with point-by-point KNEC marking schemes in the protected, watermarked viewer.
               </p>
@@ -289,7 +289,7 @@ export default async function Home() {
       {/* Call to action */}
       <section className="py-16 px-4 sm:px-6 mx-auto max-w-4xl text-center space-y-6">
         <h2 className="text-2xl sm:text-3xl font-black text-white">
-          Ready to begin your KCSE revision?
+          Ready to begin your KCSE exam preparation?
         </h2>
         <p className="text-slate-400 text-sm max-w-lg mx-auto">
           Get your unique Access Code in 10 seconds and unlock verified examination materials.

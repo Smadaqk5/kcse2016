@@ -12,7 +12,10 @@ import {
   KeyRound,
   ExternalLink,
   BookOpen,
+  ShoppingCart,
+  Check,
 } from "lucide-react";
+import { useCart } from "@/lib/cart";
 
 interface SinglePaperCheckoutProps {
   paper: {
@@ -29,6 +32,20 @@ interface SinglePaperCheckoutProps {
 
 export function SinglePaperCheckout({ paper, hasAccess = false }: SinglePaperCheckoutProps) {
   const router = useRouter();
+  const { addItem, isInCart, openCart } = useCart();
+  const alreadyInCart = isInCart(paper.id);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addItem({
+      id: paper.id,
+      title: paper.title,
+      unitCode: paper.unitCode,
+      course: paper.course,
+      topic: paper.topic,
+      price: Number(paper.price) || 250,
+    });
+  };
   const [modalOpen, setModalOpen] = useState(false);
   const [phone, setPhone] = useState("07");
   const [loading, setLoading] = useState(false);
@@ -181,14 +198,39 @@ export function SinglePaperCheckout({ paper, hasAccess = false }: SinglePaperChe
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+        {/* Add to Cart button for students without an account */}
+        <button
+          type="button"
+          onClick={alreadyInCart ? openCart : handleAddToCart}
+          className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-semibold transition active:scale-95 cursor-pointer ${
+            alreadyInCart
+              ? "bg-emerald-950/90 border border-emerald-500/80 text-emerald-300 hover:bg-emerald-900 shadow-sm"
+              : "border border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white"
+          }`}
+          title={alreadyInCart ? "View in Cart" : "Add paper to cart"}
+          aria-label={alreadyInCart ? "View in cart" : "Add paper to cart"}
+        >
+          {alreadyInCart ? (
+            <>
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+              <span>In Cart</span>
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="w-3.5 h-3.5 text-emerald-400" />
+              <span>+ Cart</span>
+            </>
+          )}
+        </button>
+
         <button
           type="button"
           onClick={() => {
             setActiveTab("buy");
             setModalOpen(true);
           }}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-emerald-500 transition-colors active:scale-95 cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs sm:text-sm font-bold text-white shadow-md hover:bg-emerald-500 transition-colors active:scale-95 cursor-pointer"
         >
           <CreditCard className="w-3.5 h-3.5" />
           <span>Buy • KES {numPrice}</span>
@@ -197,7 +239,7 @@ export function SinglePaperCheckout({ paper, hasAccess = false }: SinglePaperChe
         <button
           type="button"
           onClick={() => router.push(`/papers/${paper.id}/view`)}
-          className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs sm:text-sm font-semibold text-slate-200 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
         >
           <BookOpen className="w-3.5 h-3.5 text-emerald-400" />
           <span>View</span>
@@ -346,6 +388,21 @@ export function SinglePaperCheckout({ paper, hasAccess = false }: SinglePaperChe
                       </>
                     )}
                   </button>
+
+                  {/* Add to Cart Alternative in Modal */}
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        handleAddToCart(e);
+                        setModalOpen(false);
+                      }}
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-slate-700 bg-slate-950 hover:bg-slate-850 text-slate-300 hover:text-white text-xs font-semibold transition cursor-pointer"
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>{alreadyInCart ? "In Cart (Keep Browsing)" : "Add to Cart & Keep Browsing"}</span>
+                    </button>
+                  </div>
 
                   {/* Status Verification / Simulation Helper */}
                   {paymentId && (

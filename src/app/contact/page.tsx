@@ -61,7 +61,7 @@ export default function ContactPage() {
     },
     {
       q: "How fast does WhatsApp support respond?",
-      a: "Our WhatsApp support desk (+14144015805) is monitored 24/7 during exam revision periods. Most inquiries regarding access codes and paper activation are answered within 5 minutes.",
+      a: "Our WhatsApp support desk (+14144015805) is monitored 24/7 during examination periods. Most inquiries regarding access codes and paper activation are answered within 5 minutes.",
     },
   ];
 

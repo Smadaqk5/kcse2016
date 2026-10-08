@@ -136,7 +136,7 @@ export function PricingManager() {
       const fd = new FormData();
       fd.append("title", newTitle.trim());
       fd.append("unitCode", newUnitCode.trim() || "101/1");
-      fd.append("topic", newTopic.trim() || "General Revision");
+      fd.append("topic", newTopic.trim() || "General Study");
       fd.append("course", newCourse.trim() || "KCSE");
       fd.append("semester", newSemester.trim() || "1");
       fd.append("price", String(newPrice));
@@ -737,9 +737,9 @@ export function PricingManager() {
                     onChange={(e) => setNewContentType(e.target.value as "PAST_PAPER" | "REVISION_NOTE" | "MOCK_EXAM")}
                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <option value="PAST_PAPER">Past Paper</option>
+                    <option value="PAST_PAPER">Exam Paper</option>
                     <option value="MOCK_EXAM">Predicted Mock Exam</option>
-                    <option value="REVISION_NOTE">Revision Note / Summary</option>
+                    <option value="REVISION_NOTE">Study Guide / Summary</option>
                   </select>
                 </div>
 
@@ -886,7 +886,7 @@ export function PricingManager() {
                               : "bg-slate-100 text-slate-700"
                           }`}
                         >
-                          {paper.contentType === "MOCK_EXAM" ? "PREDICTED MOCK" : "PAST PAPER"}
+                          {paper.contentType === "MOCK_EXAM" ? "PREDICTED MOCK" : "EXAM PAPER"}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 whitespace-nowrap font-bold text-slate-700">

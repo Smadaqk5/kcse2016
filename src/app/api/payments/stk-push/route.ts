@@ -11,6 +11,7 @@ import {
 } from "@/lib/nestlink";
 import { getSubscriptionDurationDays } from "@/lib/access";
 import { hashPassword, signSession } from "@/lib/auth";
+import { fetchPackagesFromFirestore, fetchPapersFromFirestore } from "@/lib/firebase-db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -90,32 +91,60 @@ export async function POST(req: NextRequest) {
 
     if (rawBody.type === "SUBSCRIPTION" || rawBody.subscriptionType || rawBody.packageId) {
       const typeStr = rawBody.subscriptionType as SubscriptionType | undefined;
-      const pkg = rawBody.packageId
-        ? await prisma.subscriptionPackage.findFirst({
-            where: { id: String(rawBody.packageId), isActive: true },
-          })
-        : typeStr
-        ? await prisma.subscriptionPackage.findFirst({
-            where: { subscriptionType: typeStr, isActive: true },
-          })
-        : null;
+      const firestorePackages = await fetchPackagesFromFirestore().catch(() => []);
+      let matchedFs = null;
 
-      if (pkg) {
-        durationDays = getSubscriptionDurationDays(pkg.subscriptionType, pkg.durationDays);
-        subscriptionType = pkg.subscriptionType;
-        if (!rawAmount || rawAmount <= 0) {
-          rawAmount = Number(pkg.amount);
+      if (firestorePackages.length > 0) {
+        matchedFs = firestorePackages.find((p) => {
+          if (rawBody.packageId) {
+            const idLower = String(rawBody.packageId).toLowerCase();
+            if (p.id.toLowerCase() === idLower) return true;
+            if (p.id.toLowerCase().replace("pkg-", "") === idLower.replace("pkg-", "")) return true;
+            if (p.subscriptionType.toLowerCase() === idLower.replace("pkg-", "")) return true;
+          }
+          if (typeStr && p.subscriptionType === typeStr) return true;
+          return false;
+        });
+      }
+
+      if (matchedFs) {
+        subscriptionType = matchedFs.subscriptionType as SubscriptionType;
+        durationDays = Number(matchedFs.durationDays) || 1;
+        rawAmount = Number(matchedFs.amount);
+      } else {
+        const pkg = rawBody.packageId
+          ? await prisma.subscriptionPackage.findFirst({
+              where: { id: String(rawBody.packageId), isActive: true },
+            })
+          : typeStr
+          ? await prisma.subscriptionPackage.findFirst({
+              where: { subscriptionType: typeStr, isActive: true },
+            })
+          : null;
+
+        if (pkg) {
+          durationDays = getSubscriptionDurationDays(pkg.subscriptionType, pkg.durationDays);
+          subscriptionType = pkg.subscriptionType;
+          if (!rawAmount || rawAmount <= 0) {
+            rawAmount = Number(pkg.amount);
+          }
+        } else if (typeStr && ["DAILY", "WEEKLY", "MONTHLY"].includes(typeStr)) {
+          subscriptionType = typeStr;
+          durationDays = getSubscriptionDurationDays(typeStr, 1);
         }
-      } else if (typeStr && ["DAILY", "WEEKLY", "MONTHLY"].includes(typeStr)) {
-        subscriptionType = typeStr;
-        durationDays = getSubscriptionDurationDays(typeStr, 1);
       }
     }
 
     if (paperId && (!rawAmount || rawAmount <= 0)) {
-      const paper = await prisma.paper.findUnique({ where: { id: paperId } });
-      if (paper) {
-        rawAmount = Number(paper.price);
+      const firestorePapers = await fetchPapersFromFirestore().catch(() => []);
+      const fp = firestorePapers.find((p) => p.id === paperId);
+      if (fp) {
+        rawAmount = Number(fp.price);
+      } else {
+        const paper = await prisma.paper.findUnique({ where: { id: paperId } });
+        if (paper) {
+          rawAmount = Number(paper.price);
+        }
       }
     }
 

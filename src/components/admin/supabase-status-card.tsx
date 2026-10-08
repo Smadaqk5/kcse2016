@@ -177,9 +177,9 @@ CREATE TABLE IF NOT EXISTS "public"."ActivityLog" (
 -- Default Packages
 INSERT INTO "public"."SubscriptionPackage" ("id", "name", "subscriptionType", "amount", "durationDays", "isActive", "sortOrder")
 VALUES
-    ('pkg-daily', 'Daily Access Pass', 'DAILY', 49.00, 1, true, 1),
-    ('pkg-weekly', 'Weekly Exam Booster', 'WEEKLY', 199.00, 7, true, 2),
-    ('pkg-monthly', 'Monthly VIP Pass', 'MONTHLY', 599.00, 30, true, 3)
+    ('pkg-daily', 'Daily Access Pass', 'DAILY', 1500.00, 1, true, 1),
+    ('pkg-weekly', 'Weekly Exam Booster', 'WEEKLY', 5500.00, 7, true, 2),
+    ('pkg-monthly', 'Monthly VIP Pass', 'MONTHLY', 12500.00, 30, true, 3)
 ON CONFLICT ("subscriptionType") DO NOTHING;
 
 -- Default Admin User (Password: Mainaadam66@)

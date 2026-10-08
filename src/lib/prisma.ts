@@ -177,7 +177,7 @@ const mockStore = (globalThis as unknown as {
       id: "pkg-daily",
       name: "Daily Access Pass",
       subscriptionType: "DAILY",
-      amount: 49,
+      amount: 1500,
       durationDays: 1,
       isActive: true,
       sortOrder: 1,
@@ -188,7 +188,7 @@ const mockStore = (globalThis as unknown as {
       id: "pkg-weekly",
       name: "Weekly Exam Booster",
       subscriptionType: "WEEKLY",
-      amount: 199,
+      amount: 5500,
       durationDays: 7,
       isActive: true,
       sortOrder: 2,
@@ -199,7 +199,7 @@ const mockStore = (globalThis as unknown as {
       id: "pkg-monthly",
       name: "Monthly VIP Pass",
       subscriptionType: "MONTHLY",
-      amount: 599,
+      amount: 12500,
       durationDays: 30,
       isActive: true,
       sortOrder: 3,
@@ -508,32 +508,45 @@ function createMockPrisma(): PrismaClient {
     },
   };
 
-  const packageMethods = {
-    findMany: async ({ where }: { where?: { isActive?: boolean }; orderBy?: unknown } = {}) => {
-      try {
-        const fp = await fetchPackagesFromFirestore();
-        if (fp && fp.length > 0) {
-          for (const item of fp) {
-            const found = mockStore.packages.find((p) => p.id === item.id || p.subscriptionType === item.subscriptionType);
-            if (found) {
-              found.amount = Number(item.amount);
-              found.name = item.name || found.name;
-            } else {
-              mockStore.packages.push({
-                id: item.id,
-                name: item.name,
-                subscriptionType: item.subscriptionType,
-                amount: Number(item.amount),
-                durationDays: item.durationDays,
-                isActive: item.isActive,
-                sortOrder: item.sortOrder,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              });
-            }
+  const syncPackagesFromFirestore = async () => {
+    try {
+      const fp = await fetchPackagesFromFirestore();
+      if (fp && fp.length > 0) {
+        for (const item of fp) {
+          const found = mockStore.packages.find(
+            (p) =>
+              p.id === item.id ||
+              p.subscriptionType === item.subscriptionType ||
+              p.id.toLowerCase().includes(item.id.toLowerCase()) ||
+              item.id.toLowerCase().includes(p.id.toLowerCase())
+          );
+          if (found) {
+            found.amount = Number(item.amount);
+            found.name = item.name || found.name;
+            found.durationDays = Number(item.durationDays) || found.durationDays;
+            found.isActive = item.isActive !== false;
+            found.sortOrder = Number(item.sortOrder) || found.sortOrder;
+          } else {
+            mockStore.packages.push({
+              id: item.id,
+              name: item.name,
+              subscriptionType: item.subscriptionType,
+              amount: Number(item.amount),
+              durationDays: Number(item.durationDays) || 1,
+              isActive: item.isActive !== false,
+              sortOrder: Number(item.sortOrder) || 1,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
           }
         }
-      } catch {}
+      }
+    } catch {}
+  };
+
+  const packageMethods = {
+    findMany: async ({ where }: { where?: { isActive?: boolean }; orderBy?: unknown } = {}) => {
+      await syncPackagesFromFirestore();
       let list = [...mockStore.packages];
       if (where?.isActive !== undefined) {
         list = list.filter((p) => p.isActive === where.isActive);
@@ -541,9 +554,18 @@ function createMockPrisma(): PrismaClient {
       return list.sort((a, b) => a.sortOrder - b.sortOrder);
     },
     findFirst: async ({ where }: { where?: { id?: string; subscriptionType?: string; isActive?: boolean } } = {}) => {
+      await syncPackagesFromFirestore();
       return (
         mockStore.packages.find((p) => {
-          if (where?.id && p.id !== where.id) return false;
+          if (where?.id) {
+            const idToMatch = where.id.toLowerCase();
+            const matches =
+              p.id === where.id ||
+              p.id.toLowerCase() === idToMatch ||
+              p.id.toLowerCase().replace("pkg-", "") === idToMatch.replace("pkg-", "") ||
+              p.subscriptionType.toLowerCase() === idToMatch.replace("pkg-", "");
+            if (!matches) return false;
+          }
           if (where?.subscriptionType && p.subscriptionType !== where.subscriptionType) return false;
           if (where?.isActive !== undefined && p.isActive !== where.isActive) return false;
           return true;
@@ -551,9 +573,18 @@ function createMockPrisma(): PrismaClient {
       );
     },
     findUnique: async ({ where }: { where: { id?: string; subscriptionType?: string } }) => {
+      await syncPackagesFromFirestore();
       return (
         mockStore.packages.find((p) => {
-          if (where.id && p.id === where.id) return true;
+          if (where.id) {
+            const idToMatch = where.id.toLowerCase();
+            return (
+              p.id === where.id ||
+              p.id.toLowerCase() === idToMatch ||
+              p.id.toLowerCase().replace("pkg-", "") === idToMatch.replace("pkg-", "") ||
+              p.subscriptionType.toLowerCase() === idToMatch.replace("pkg-", "")
+            );
+          }
           if (where.subscriptionType && p.subscriptionType === where.subscriptionType) return true;
           return false;
         }) || null

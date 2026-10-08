@@ -36,9 +36,9 @@ export async function GET() {
     );
   } catch {
     return NextResponse.json([
-      { id: "pkg-daily", name: "Daily Access Pass", subscriptionType: "DAILY", amount: 49, durationDays: 1 },
-      { id: "pkg-weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 199, durationDays: 7 },
-      { id: "pkg-monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 599, durationDays: 30 },
+      { id: "pkg-daily", name: "Daily Access Pass", subscriptionType: "DAILY", amount: 1500, durationDays: 1 },
+      { id: "pkg-weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 5500, durationDays: 7 },
+      { id: "pkg-monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 12500, durationDays: 30 },
     ]);
   }
 }

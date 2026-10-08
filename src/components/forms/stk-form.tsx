@@ -31,31 +31,29 @@ export function StkForm({
   const router = useRouter();
 
   const defaultPackages: PackageOption[] = [
-    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY", amount: 49, durationDays: 1 },
-    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 199, durationDays: 7 },
-    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 599, durationDays: 30 },
+    { id: "pkg-daily", name: "Daily Access Pass", subscriptionType: "DAILY", amount: 1500, durationDays: 1 },
+    { id: "pkg-weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY", amount: 5500, durationDays: 7 },
+    { id: "pkg-monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY", amount: 12500, durationDays: 30 },
   ];
 
   const [fetchedPackages, setFetchedPackages] = useState<PackageOption[]>([]);
 
   useEffect(() => {
-    if (!packages || packages.length === 0) {
-      fetch("/api/packages")
-        .then((res) => (res.ok ? res.json() : []))
-        .then((data: PackageOption[]) => {
-          if (Array.isArray(data) && data.length > 0) {
-            setFetchedPackages(data);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [packages]);
+    fetch("/api/packages")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: PackageOption[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setFetchedPackages(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const availablePackages =
-    packages && packages.length > 0
-      ? packages
-      : fetchedPackages.length > 0
+    fetchedPackages.length > 0
       ? fetchedPackages
+      : packages && packages.length > 0
+      ? packages
       : defaultPackages;
 
   const [selectedPkgId, setSelectedPkgId] = useState<string | null>(null);

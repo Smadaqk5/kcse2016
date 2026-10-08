@@ -42,7 +42,7 @@ export const createUserSchema = z.object({
 export const selfRegisterSchema = createUserSchema;
 
 export const stkSchema = z.object({
-  amount: z.number().positive(),
+  amount: z.number().positive().optional(),
   phone: phoneField,
   type: z.enum(["SUBSCRIPTION", "PAPER"]),
   subscriptionType: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional(),

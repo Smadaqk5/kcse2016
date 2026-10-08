@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hasActiveSubscription } from "@/lib/access";
 import { StkForm } from "@/components/forms/stk-form";
 import { CopyCodeBadge } from "@/components/copy-code-badge";
+import { fetchPackagesFromFirestore } from "@/lib/firebase-db";
 import {
   ShieldCheck,
   Clock,
@@ -22,12 +23,12 @@ export default async function DashboardPage() {
   if (!session || session.role !== "SUBSCRIBER") redirect("/login");
 
   const fallbackPackages = [
-    { id: "daily", name: "Daily Pass", subscriptionType: "DAILY" as const, amount: 49, durationDays: 1 },
-    { id: "weekly", name: "Weekly Booster", subscriptionType: "WEEKLY" as const, amount: 199, durationDays: 7 },
-    { id: "monthly", name: "Monthly VIP", subscriptionType: "MONTHLY" as const, amount: 599, durationDays: 30 },
+    { id: "daily", name: "Daily Pass", subscriptionType: "DAILY" as const, amount: 1500, durationDays: 1 },
+    { id: "weekly", name: "Weekly Booster", subscriptionType: "WEEKLY" as const, amount: 5500, durationDays: 7 },
+    { id: "monthly", name: "Monthly VIP", subscriptionType: "MONTHLY" as const, amount: 12500, durationDays: 30 },
   ];
 
-  const [subscription, purchases, papers, packages, userRecord] = await Promise.all([
+  const [subscription, purchases, papers, packages, userRecord, firestorePackages] = await Promise.all([
     hasActiveSubscription(session.userId),
     prisma.paperPurchase.findMany({ where: { userId: session.userId }, include: { paper: true } }),
     prisma.paper.findMany({ where: { isPublished: true }, take: 50 }),
@@ -38,7 +39,10 @@ export default async function DashboardPage() {
       })
       .catch(() => []),
     prisma.user.findUnique({ where: { id: session.userId } }).catch(() => null),
+    fetchPackagesFromFirestore().catch(() => []),
   ]);
+
+  const livePackages = firestorePackages.length > 0 ? firestorePackages : packages.length > 0 ? packages : fallbackPackages;
 
   const accessCode = userRecord?.twoFactorSecret || "KCSE-2026-DEMO";
 
@@ -160,7 +164,7 @@ export default async function DashboardPage() {
           <div className="space-y-6">
             <StkForm
               compact
-              packages={(packages.length ? packages : fallbackPackages).map((pkg) => ({
+              packages={livePackages.map((pkg) => ({
                 id: pkg.id,
                 name: pkg.name,
                 subscriptionType: pkg.subscriptionType,

@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
         id: String(p.id),
         name: String(p.name || "Access Pass"),
         subscriptionType: (p.subscriptionType as "DAILY" | "WEEKLY" | "MONTHLY") || "DAILY",
-        amount: Number(p.amount) || 49,
+        amount: Number(p.amount) || 1500,
         durationDays: Number(p.durationDays) || 1,
         isActive: p.isActive !== false,
         sortOrder: Number(p.sortOrder) || 1,

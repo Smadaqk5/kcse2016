@@ -13,9 +13,9 @@ import { fetchPackagesFromFirestore } from "@/lib/firebase-db";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  let dailyPrice = 49;
-  let weeklyPrice = 199;
-  let monthlyPrice = 599;
+  let dailyPrice = 1500;
+  let weeklyPrice = 5500;
+  let monthlyPrice = 12500;
 
   try {
     const firestorePlans = await fetchPackagesFromFirestore().catch(() => []);

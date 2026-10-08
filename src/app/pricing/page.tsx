@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function PricingPage() {
   const session = await getCurrentSession();
   const fallbackPlans = [
-    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY" as const, amount: 49, durationDays: 1 },
-    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY" as const, amount: 199, durationDays: 7 },
-    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY" as const, amount: 599, durationDays: 30 },
+    { id: "daily", name: "Daily Access Pass", subscriptionType: "DAILY" as const, amount: 1500, durationDays: 1 },
+    { id: "weekly", name: "Weekly Exam Booster", subscriptionType: "WEEKLY" as const, amount: 5500, durationDays: 7 },
+    { id: "monthly", name: "Monthly VIP Pass", subscriptionType: "MONTHLY" as const, amount: 12500, durationDays: 30 },
   ];
   let plans = fallbackPlans;
 

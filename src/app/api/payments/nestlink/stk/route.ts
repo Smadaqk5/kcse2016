@@ -8,6 +8,7 @@ import { stkSchema } from "@/lib/validators";
 import { initiateNestlinkStkPush } from "@/lib/nestlink";
 import { getSubscriptionDurationDays } from "@/lib/access";
 import { hashPassword, signSession } from "@/lib/auth";
+import { fetchPackagesFromFirestore, fetchPapersFromFirestore } from "@/lib/firebase-db";
 
 export async function POST(req: NextRequest) {
   const session = requireSession(req);
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     candidateUser = existingUser;
   }
 
-  let paymentAmount = parsed.data.amount;
+  let paymentAmount: number = Number(parsed.data.amount) || 0;
   let durationDays = 1;
   let subscriptionType = parsed.data.subscriptionType;
 
@@ -67,6 +68,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 1. Check live Firestore packages first for real-time admin prices
+    const firestorePackages = await fetchPackagesFromFirestore().catch(() => []);
+    let resolvedAmount: number | null = null;
+    let resolvedDurationDays = 1;
+    let resolvedSubType: SubscriptionType | null = null;
+
+    if (firestorePackages.length > 0) {
+      const match = firestorePackages.find((p) => {
+        if (parsed.data.packageId) {
+          const idLower = parsed.data.packageId.toLowerCase();
+          if (p.id.toLowerCase() === idLower) return true;
+          if (p.id.toLowerCase().replace("pkg-", "") === idLower.replace("pkg-", "")) return true;
+          if (p.subscriptionType.toLowerCase() === idLower.replace("pkg-", "")) return true;
+        }
+        if (parsed.data.subscriptionType && p.subscriptionType === parsed.data.subscriptionType) return true;
+        return false;
+      });
+      if (match) {
+        resolvedAmount = Number(match.amount);
+        resolvedDurationDays = Number(match.durationDays) || 1;
+        resolvedSubType = match.subscriptionType as SubscriptionType;
+      }
+    }
+
+    // 2. Query Prisma package (which also synchronizes with Firestore)
     const pkg = parsed.data.packageId
       ? await prisma.subscriptionPackage.findFirst({
           where: { id: parsed.data.packageId, isActive: true },
@@ -78,19 +104,44 @@ export async function POST(req: NextRequest) {
           },
         });
 
-    if (!pkg) {
+    if (pkg) {
+      if (resolvedAmount === null) {
+        resolvedAmount = Number(pkg.amount);
+      }
+      resolvedDurationDays = getSubscriptionDurationDays(pkg.subscriptionType, pkg.durationDays);
+      resolvedSubType = pkg.subscriptionType;
+    }
+
+    // 3. If client sent an amount, use it as fallback
+    if (resolvedAmount === null && parsed.data.amount && parsed.data.amount > 0) {
+      resolvedAmount = Number(parsed.data.amount);
+      resolvedSubType = (parsed.data.subscriptionType as SubscriptionType) || "DAILY";
+    }
+
+    if (resolvedAmount === null) {
       return NextResponse.json({ error: "Subscription package not found." }, { status: 404 });
     }
-    paymentAmount = Number(pkg.amount);
-    durationDays = getSubscriptionDurationDays(pkg.subscriptionType, pkg.durationDays);
-    subscriptionType = pkg.subscriptionType;
+
+    paymentAmount = resolvedAmount;
+    durationDays = resolvedDurationDays;
+    subscriptionType = resolvedSubType || "DAILY";
   } else if (parsed.data.type === "PAPER" && parsed.data.paperId) {
-    const paper = await prisma.paper.findUnique({
-      where: { id: parsed.data.paperId },
-    });
-    if (paper) {
-      paymentAmount = Number(paper.price);
+    const firestorePapers = await fetchPapersFromFirestore().catch(() => []);
+    const fp = firestorePapers.find((p) => p.id === parsed.data.paperId);
+    if (fp) {
+      paymentAmount = Number(fp.price);
+    } else {
+      const paper = await prisma.paper.findUnique({
+        where: { id: parsed.data.paperId },
+      });
+      if (paper) {
+        paymentAmount = Number(paper.price);
+      }
     }
+  }
+
+  if (!paymentAmount || paymentAmount <= 0) {
+    return NextResponse.json({ error: "Invalid payment amount." }, { status: 400 });
   }
 
   // Create payment record

@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KCSE Hustle App",
+  title: "KCSE exam papers",
   description: "Secure exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
   openGraph: {
-    title: "KCSE Hustle App",
+    title: "KCSE exam papers",
     description: "Secure exam papers and study materials platform with view-only subscription access and M-Pesa payments.",
   },
 };

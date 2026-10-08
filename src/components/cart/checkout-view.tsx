@@ -633,6 +633,18 @@ export function CheckoutView() {
                   <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>Immediate access without email registration</span>
                 </div>
+                <div className="pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400">Need help? 24/7 Desk:</span>
+                  <a
+                    href="https://t.me/techhub_ke"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 font-semibold"
+                  >
+                    <span>Telegram @techhub_ke</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>

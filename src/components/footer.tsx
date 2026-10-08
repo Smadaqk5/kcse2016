@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, Zap, Lock, MessageCircle } from "lucide-react";
+import { ShieldCheck, Zap, Lock, MessageCircle, Send } from "lucide-react";
 
 export function Footer() {
   return (
@@ -33,13 +33,22 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
             <span className="text-slate-400">24/7 Candidate Support:</span>
             <a
+              href="https://t.me/techhub_ke"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-sky-950/80 border border-sky-800/80 px-3 py-1 font-semibold text-sky-300 hover:bg-sky-900 transition"
+            >
+              <Send className="w-3.5 h-3.5 text-sky-400" />
+              <span>Telegram @techhub_ke</span>
+            </a>
+            <a
               href="https://wa.me/14144015805?text=Hello%20KCSE%20Support%2C%20I%20need%20assistance"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-full bg-emerald-950/80 border border-emerald-800/80 px-3 py-1 font-semibold text-emerald-300 hover:bg-emerald-900 transition"
             >
               <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-              <span>WhatsApp +14144015805</span>
+              <span>WhatsApp</span>
             </a>
           </div>
 

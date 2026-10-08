@@ -60,8 +60,8 @@ export default function ContactPage() {
       a: "All KCSE examination papers and marking schemes are copyrighted materials protected under security protocol to maintain academic integrity. Content is watermarked for your specific session.",
     },
     {
-      q: "How fast does WhatsApp support respond?",
-      a: "Our WhatsApp support desk (+14144015805) is monitored 24/7 during examination periods. Most inquiries regarding access codes and paper activation are answered within 5 minutes.",
+      q: "How fast do Telegram and WhatsApp support desks respond?",
+      a: "Our Telegram desk (@techhub_ke) and WhatsApp desk (+14144015805) are monitored 24/7 during examination periods. Inquiries regarding access codes, paper activation, or M-Pesa receipts are usually resolved in minutes.",
     },
   ];
 
@@ -168,21 +168,21 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm sm:text-base">Telegram Helpdesk</h3>
-                  <p className="text-xs text-slate-400">Direct candidate assistance</p>
+                  <p className="text-xs text-sky-400 font-mono font-semibold">@techhub_ke</p>
                 </div>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Reach our secondary support channel on Telegram for queries regarding papers or marking schemes.
+                Reach our 24/7 dedicated support desk on Telegram for instant assistance with exam papers, access codes, or M-Pesa verification.
               </p>
             </div>
             <a
-              href="https://t.me/kcse_support"
+              href="https://t.me/techhub_ke"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 text-xs font-semibold transition"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-700/80 bg-sky-950/70 hover:bg-sky-900/80 text-sky-200 px-4 py-2.5 text-xs font-semibold transition"
             >
-              <span>Open Telegram Desk</span>
-              <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+              <span>Open @techhub_ke on Telegram</span>
+              <ExternalLink className="h-3.5 w-3.5 text-sky-400" />
             </a>
           </div>
 

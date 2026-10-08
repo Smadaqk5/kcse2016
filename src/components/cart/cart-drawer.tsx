@@ -441,6 +441,17 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               VIP Unlimited Passes →
             </Link>
           </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+            <span>Support Desk:</span>
+            <a
+              href="https://t.me/techhub_ke"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sky-400 hover:text-sky-300 font-semibold"
+            >
+              Telegram @techhub_ke
+            </a>
+          </div>
         </div>
       </div>
     </div>

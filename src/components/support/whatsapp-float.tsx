@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageCircle, Phone, Copy, Check, X } from "lucide-react";
+import { MessageCircle, Phone, Copy, Check, X, Send } from "lucide-react";
 
 export function WhatsAppFloat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,22 +74,33 @@ export function WhatsAppFloat() {
             </div>
           </div>
 
-          <div className="pt-2 flex gap-2">
+          <div className="pt-2 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-3 text-xs font-bold shadow-md shadow-emerald-950 transition active:scale-98"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Chat on WhatsApp</span>
+              </a>
+              <a
+                href={`tel:${rawNumber}`}
+                className="inline-flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 text-xs font-bold transition"
+                title="Call Support"
+              >
+                <Phone className="h-4 w-4" />
+              </a>
+            </div>
             <a
-              href={waUrl}
+              href="https://t.me/techhub_ke"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-3 text-xs font-bold shadow-md shadow-emerald-950 transition active:scale-98"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-700/70 bg-sky-950/60 hover:bg-sky-900/70 text-sky-200 py-2 px-3 text-xs font-bold transition"
             >
-              <MessageCircle className="h-4 w-4" />
-              <span>Chat on WhatsApp</span>
-            </a>
-            <a
-              href={`tel:${rawNumber}`}
-              className="inline-flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 text-xs font-bold transition"
-              title="Call Support"
-            >
-              <Phone className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5 text-sky-400" />
+              <span>Telegram Desk (@techhub_ke)</span>
             </a>
           </div>
         </div>
